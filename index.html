@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Aduanero Pro - Reconocimiento de Carga</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a; 
+            --card: #1e293b;
+            --accent: #22d3ee;
+            --text: #f1f5f9;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
+
+        /* Dashboard */
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: var(--card); padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+        .stat-card h4 { margin: 0; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; }
+        .stat-card p { margin: 8px 0 0; font-size: 2rem; font-weight: 800; color: var(--accent); }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; }
+        .tab { 
+            padding: 14px 24px; border: none; border-radius: 12px 12px 0 0;
+            cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; transition: 0.3s;
+        }
+        .tab.active { background: white; color: #0f172a; }
+
+        /* Formulario Principal */
+        .main-card { 
+            background: white; color: #1e293b; padding: 30px; 
+            border-radius: 0 15px 15px 15px; box-shadow: 0 20px 25px rgba(0,0,0,0.3);
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .full { grid-column: span 3; }
+        
+        label { display: block; font-weight: 700; font-size: 0.75rem; margin-bottom: 8px; color: #475569; text-transform: uppercase; }
+        .label-special { color: #854d0e; border-bottom: 1px solid #facc15; }
+
+        input, select, textarea { 
+            width: 100%; padding: 12px; border: 1px solid #cbd5e1; 
+            border-radius: 8px; box-sizing: border-box; font-size: 1rem; color: #1e293b; font-family: inherit;
+        }
+        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2); }
+
+        /* Botones */
+        .actions { margin-top: 25px; display: grid; grid-template-columns: 2fr 1fr; gap: 15px; }
+        .btn-save { background: #0f172a; color: white; padding: 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn-excel { background: #10b981; color: white; padding: 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* Tabla */
+        .history-section { margin-top: 40px; background: var(--card); border-radius: 15px; padding: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; min-width: 1000px; }
+        th { text-align: left; padding: 12px; color: #94a3b8; border-bottom: 1px solid #334155; font-size: 0.8rem; }
+        td { padding: 14px 12px; border-bottom: 1px solid #334155; font-size: 0.85rem; vertical-align: top; }
+        
+        /* Estilos de Estado en Tabla */
+        .st-positivo { color: #10b981; font-weight: bold; }
+        .st-alerta { color: #facc15; font-weight: bold; }
+        .st-critico { color: #ef4444; font-weight: bold; }
+        .row-incidencia { background: rgba(239, 68, 68, 0.05); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header style="margin-bottom: 30px;">
+        <h1 style="margin:0; font-size: 2rem;">🛡️ Sistema de Reconocimiento de Carga</h1>
+        <p style="color: #94a3b8;">Control de Bultos y Apertura con Supervisión SENIAT</p>
+    </header>
+
+    <div class="dashboard">
+        <div class="stat-card"><h4>Total Ingresos</h4><p id="cTotal">0</p></div>
+        <div class="stat-card"><h4>📦 Aéreo</h4><p id="cAereo">0</p></div>
+        <div class="stat-card"><h4>🚢 Marítimo</h4><p id="cMar">0</p></div>
+        <div class="stat-card"><h4>⚠️ Incidencias</h4><p id="cInc" style="color:var(--danger)">0</p></div>
+    </div>
+
+    <div class="tabs">
+        <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 Registro Marítimo</button>
+        <button id="tabA" class="tab" onclick="cambiarModo('Aéreo')">✈️ Registro Aéreo</button>
+    </div>
+
+    <div class="main-card">
+        <div class="form-grid">
+            <div>
+                <label id="labelId">Número de Contenedor</label>
+                <input type="text" id="idPrincipal">
+            </div>
+            
+            <div>
+                <label id="labelFecha">Fecha y Hora de Apertura</label>
+                <input type="datetime-local" id="fechaHoraApertura">
+            </div>
+
+            <div>
+                <label id="labelBultos" class="label-special">Número de Precinto</label>
+                <input type="text" id="bultosPrecinto" placeholder="Dato de seguridad">
+            </div>
+
+            <div>
+                <label>Inspector Responsable</label>
+                <input type="text" id="encargado">
+            </div>
+
+            <div>
+                <label style="color:#854d0e">Funcionario SENIAT Presente</label>
+                <input type="text" id="funcionarioSeniat" style="background: #fffbeb;">
+            </div>
+
+            <div>
+                <label>Nombre del Cliente</label>
+                <input type="text" id="cliente">
+            </div>
+
+            <div>
+                <label>Cédula / ID Cliente</label>
+                <input type="text" id="cedula">
+            </div>
+
+            <div>
+                <label id="labelContenido">¿Qué trae el contenedor?</label>
+                <input type="text" id="contenido">
+            </div>
+
+            <div>
+                <label>Estado de Carga</label>
+                <select id="estado">
+                    <optgroup label="Estados Positivos">
+                        <option value="Excelente">Excelente 🌟</option>
+                        <option value="Bueno">Bueno (Normal) ✅</option>
+                    </optgroup>
+                    <optgroup label="Incidencias / Daños">
+                        <option value="Mojado">Mojado 💧</option>
+                        <option value="Dañado">Dañado (Golpes) ⚠️</option>
+                        <option value="Embalaje Roto">Embalaje Roto 📦</option>
+                        <option value="Sello Violado">Sello Violado 🚫</option>
+                        <option value="Faltante">Faltante de Carga 📉</option>
+                        <option value="Carga Suelta">Carga Suelta / Sin paletizar 🧊</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="full">
+                <label>Observaciones del Reconocimiento</label>
+                <textarea id="obs" rows="2"></textarea>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-save" onclick="registrar()">GUARDAR ACTA DE RECONOCIMIENTO</button>
+            <button class="btn-excel" onclick="exportarExcel()">DESCARGAR REPORTE EXCEL</button>
+        </div>
+    </div>
+
+    <div class="history-section">
+        <h3 id="tituloTabla">Historial Marítimo</h3>
+        <table id="tablaDatos">
+            <thead>
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th id="thId">Contenedor</th>
+                    <th id="thBultos">Precinto</th>
+                    <th>Cliente / ID</th>
+                    <th>Contenido</th>
+                    <th>Funcionario SENIAT</th>
+                    <th>Estado</th>
+                    <th>Borrar</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoTabla"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let modoActual = 'Marítimo';
+    let db = JSON.parse(localStorage.getItem('logistica_v_final_estados')) || [];
+
+    function cambiarModo(modo) {
+        modoActual = modo;
+        document.getElementById('tabM').className = modo === 'Marítimo' ? 'tab active' : 'tab';
+        document.getElementById('tabA').className = modo === 'Aéreo' ? 'tab active' : 'tab';
+        
+        document.getElementById('labelId').innerText = modo === 'Marítimo' ? "Número de Contenedor" : "Número de Guía";
+        document.getElementById('labelFecha').innerText = modo === 'Marítimo' ? "Fecha y Hora de Apertura" : "Fecha y Hora de Recibo";
+        document.getElementById('labelBultos').innerText = modo === 'Marítimo' ? "Número de Precinto" : "Bultos Reconocidos";
+        document.getElementById('labelContenido').innerText = modo === 'Marítimo' ? "¿Qué trae el contenedor?" : "¿Qué trae la guía?";
+        
+        document.getElementById('thId').innerText = modo === 'Marítimo' ? "Contenedor" : "Guía";
+        document.getElementById('thBultos').innerText = modo === 'Marítimo' ? "Precinto" : "Bultos";
+        document.getElementById('tituloTabla').innerText = "Historial " + modo;
+        
+        actualizarUI();
+    }
+
+    function registrar() {
+        const item = {
+            tipo: modoActual,
+            fechaHoraApertura: document.getElementById('fechaHoraApertura').value.replace('T', ' '),
+            identificador: document.getElementById('idPrincipal').value,
+            bultosPrecinto: document.getElementById('bultosPrecinto').value,
+            encargado: document.getElementById('encargado').value,
+            funcionarioSeniat: document.getElementById('funcionarioSeniat').value,
+            cliente: document.getElementById('cliente').value,
+            cedula: document.getElementById('cedula').value,
+            contenido: document.getElementById('contenido').value,
+            estado: document.getElementById('estado').value,
+            observaciones: document.getElementById('obs').value,
+            fechaSistema: new Date().toLocaleString()
+        };
+
+        if(!item.identificador || !item.cliente || !item.fechaHoraApertura) {
+            return alert("Complete los campos obligatorios para el acta.");
+        }
+
+        db.push(item);
+        localStorage.setItem('logistica_v_final_estados', JSON.stringify(db));
+        
+        ['idPrincipal', 'fechaHoraApertura', 'bultosPrecinto', 'cliente', 'cedula', 'contenido', 'obs'].forEach(id => document.getElementById(id).value = '');
+        actualizarUI();
+    }
+
+    function borrar(index) {
+        if(confirm("¿Eliminar registro?")) {
+            db.splice(index, 1);
+            localStorage.setItem('logistica_v_final_estados', JSON.stringify(db));
+            actualizarUI();
+        }
+    }
+
+    function actualizarUI() {
+        const cuerpo = document.getElementById('cuerpoTabla');
+        cuerpo.innerHTML = '';
+        
+        document.getElementById('cTotal').innerText = db.length;
+        document.getElementById('cAereo').innerText = db.filter(i => i.tipo === 'Aéreo').length;
+        document.getElementById('cMar').innerText = db.filter(i => i.tipo === 'Marítimo').length;
+        
+        // Incidencias: Todo lo que NO sea Excelente o Bueno
+        const inc = db.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
+        document.getElementById('cInc').innerText = inc;
+
+        const filtrados = db.filter(i => i.tipo === modoActual);
+        filtrados.reverse().forEach((item) => {
+            const indexReal = db.indexOf(item);
+            
+            // Clase de color según estado
+            let claseEstado = "st-positivo";
+            let filaCritica = "";
+            if(item.estado === 'Mojado' || item.estado === 'Dañado' || item.estado === 'Sello Violado' || item.estado === 'Faltante') {
+                claseEstado = "st-critico";
+                filaCritica = "row-incidencia";
+            } else if (item.estado === 'Embalaje Roto' || item.estado === 'Carga Suelta') {
+                claseEstado = "st-alerta";
+            }
+
+            cuerpo.innerHTML += `
+                <tr class="${filaCritica}">
+                    <td><b>${item.fechaHoraApertura}</b></td>
+                    <td>${item.identificador}</td>
+                    <td><span style="background:#e2e8f0; padding:2px 5px; border-radius:4px; color:#1e293b">${item.bultosPrecinto}</span></td>
+                    <td>${item.cliente}<br><small>${item.cedula}</small></td>
+                    <td style="color:var(--accent)">${item.contenido}</td>
+                    <td>${item.funcionarioSeniat}</td>
+                    <td><span class="${claseEstado}">${item.estado}</span></td>
+                    <td><button onclick="borrar(${indexReal})" style="background:none; border:none; color:white; cursor:pointer;">🗑️</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    function exportarExcel() {
+        if(db.length === 0) return alert("No hay datos.");
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.filter(i => i.tipo === 'Marítimo')), "Aduana Maritima");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(db.filter(i => i.tipo === 'Aéreo')), "Aduana Aerea");
+        XLSX.writeFile(wb, "Reporte_Reconocimiento_Final.xlsx");
+    }
+
+    actualizarUI();
+</script>
+
+</body>
+</html>
