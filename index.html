@@ -21,16 +21,15 @@
         .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
         .header-app h1 { font-size: 1rem; color: var(--accent); margin: 0; text-transform: uppercase; }
 
-        /* Dashboard Dinámico */
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; overflow: hidden; }
-        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; }
+        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; }
         .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
         .stat-badge { position: absolute; top: 5px; right: 5px; font-size: 0.5rem; background: #334155; padding: 2px 5px; border-radius: 4px; color: var(--accent); }
 
         .tabs { display: flex; gap: 5px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; transition: 0.3s; }
-        .tab.active { background: white; color: #0f172a; box-shadow: 0 -4px 10px rgba(34, 211, 238, 0.2); }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; }
+        .tab.active { background: white; color: #0f172a; }
 
         .main-card { background: white; color: #1e293b; padding: 18px; border-radius: 0 10px 10px 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
@@ -99,7 +98,7 @@
             <div><label id="labelBultos">N° Precinto</label><input type="text" id="bultos"></div>
             <div><label>Inspector Actuante</label><input type="text" id="encargado"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
-            <div><label style="color:#d97706">Funcionario SENIAT</label><input type="text" id="seniat" style="background:#fffbeb"></div>
+            <div><label style="color:#d97706">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" style="background:#fffbeb"></div>
             
             <div><label>Nombre del Cliente</label><input type="text" id="cliente"></div>
             <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
@@ -144,8 +143,7 @@
         <div class="search-box">
             <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 FILTRAR EN HISTORIAL ACTUAL...">
         </div>
-        
-        <table>
+        <table id="tablaDatos">
             <thead>
                 <tr>
                     <th>TIPO</th>
@@ -168,7 +166,7 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v20')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v21')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
@@ -188,18 +186,14 @@
     async function initCamera() { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); }
     function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); const prev = document.getElementById('photoPreview'); prev.src = data; prev.classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
 
-    // FUNCIÓN DE CAMBIO DE MODO MEJORADA
     function cambiarModo(m) {
         modoActual = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
-        
-        // Actualizar etiquetas
         document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía";
         document.getElementById('labelBultos').innerText = m === 'Marítimo' ? "N° Precinto" : "Bultos Reconocidos";
         document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
-        
-        actualizarUI(); // Actualiza contadores y tabla según el modo
+        actualizarUI();
     }
 
     function registrar() {
@@ -220,10 +214,9 @@
             obs: document.getElementById('obs').value,
             foto: document.getElementById('photoPreview').src || ''
         };
-
         if(!item.id || !item.cliente) return alert("Complete los campos obligatorios.");
         db.push(item);
-        localStorage.setItem('sccam_final_v20', JSON.stringify(db));
+        localStorage.setItem('sccam_final_v21', JSON.stringify(db));
         currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
         actualizarUI();
@@ -235,64 +228,63 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 20, 20);
-        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
-        doc.setFontSize(8); doc.text(`Cliente: ${item.cliente} | Empresa: ${item.empresa}`, 15, 35);
-        doc.line(15, 38, 195, 38);
-        let y = 45;
-        const fields = [ ["Identificador:", item.id], ["Modalidad:", item.tipo], ["Fecha:", item.fecha], ["Cédula/RIF:", item.cedula], ["Seguridad:", item.bultos], ["Contenido:", item.contenido], ["Estado:", item.estado], ["Inspector:", item.encargado], ["SENIAT:", item.seniat], ["Almacén:", item.almacenista] ];
-        fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
-        if(item.foto) { doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45); }
-        doc.save(`ACTA_${item.id}.pdf`);
+        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO DIGITAL", 40, 20);
+        doc.setFontSize(8); doc.text(`Generado el: ${new Date().toLocaleString()}`, 40, 25);
+        doc.line(15, 32, 195, 32);
+
+        let y = 40;
+        doc.setFontSize(10);
+        const fields = [
+            ["ID CARGA:", item.id], ["MODALIDAD:", item.tipo], ["FECHA CARGA:", item.fecha],
+            ["CLIENTE:", item.cliente], ["CÉDULA/RIF:", item.cedula], ["EMPRESA:", item.empresa],
+            ["SEGURIDAD:", item.bultos], ["ESTADO:", item.estado], ["CONTENIDO:", item.contenido]
+        ];
+        fields.forEach(f => { doc.setFont(undefined, 'bold'); doc.text(f[0], 15, y); doc.setFont(undefined, 'normal'); doc.text(f[1], 50, y); y += 7; });
+        
+        if(item.noDeclarado) { doc.setTextColor(200,0,0); doc.text(`HALLAZGO: ${item.noDeclarado}`, 15, y); y += 7; doc.setTextColor(0); }
+        if(item.foto) { doc.text("EVIDENCIA FOTOGRÁFICA:", 15, y); doc.addImage(item.foto, 'JPEG', 15, y+5, 70, 50); y += 60; }
+        
+        // SECCIÓN DE FIRMAS ACTUALIZADA
+        const ySign = 250;
+        doc.setFontSize(9);
+        doc.line(15, ySign, 65, ySign); doc.text("INSPECTOR", 30, ySign + 5, {align: 'center'});
+        doc.text(item.encargado || "Firma", 40, ySign - 2, {align: 'center'});
+
+        doc.line(75, ySign, 125, ySign); doc.text("ALMACENISTA", 100, ySign + 5, {align: 'center'});
+        doc.text(item.almacenista || "Firma", 100, ySign - 2, {align: 'center'});
+
+        doc.line(135, ySign, 185, ySign); doc.text("SENIAT", 160, ySign + 5, {align: 'center'});
+        doc.text(item.seniat || "Opcional", 160, ySign - 2, {align: 'center'});
+
+        doc.save(`ACTA_SCCAM_${item.id}.pdf`);
     }
 
-    // ACTUALIZACIÓN DE INTERFAZ FILTRADA
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
-        const filtroBusqueda = document.getElementById('buscador').value.toLowerCase();
+        const filtro = document.getElementById('buscador').value.toLowerCase();
         cuerpo.innerHTML = '';
-        
-        // FILTRAR BASE DE DATOS POR EL MODO ACTUAL (MARÍTIMO O AÉREO)
-        const registrosModo = db.filter(item => item.tipo === modoActual);
-        
-        // CALCULAR CONTADORES SOLO PARA EL MODO ACTUAL
-        const totalModo = registrosModo.length;
-        const incidenciasModo = registrosModo.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
+        const filtrados = db.filter(item => item.tipo === modoActual);
+        document.getElementById('cTotal').innerText = filtrados.length;
+        document.getElementById('cInc').innerText = filtrados.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
 
-        document.getElementById('cTotal').innerText = totalModo;
-        document.getElementById('cInc').innerText = incidenciasModo;
-        document.getElementById('incidenciaCard').style.borderColor = incidenciasModo > 0 ? 'var(--danger)' : '#334155';
-
-        // MOSTRAR TABLA FILTRADA POR MODO Y BUSQUEDA
-        registrosModo.slice().reverse().forEach((item) => {
+        filtrados.slice().reverse().forEach((item) => {
             const index = db.indexOf(item);
-            const rowText = `${item.id} ${item.cliente} ${item.empresa} ${item.cedula}`.toLowerCase();
-            
-            if(rowText.includes(filtroBusqueda)) {
+            if(`${item.id} ${item.cliente} ${item.empresa}`.toLowerCase().includes(filtro)) {
                 cuerpo.innerHTML += `<tr>
-                    <td><small>${item.tipo}</small></td>
-                    <td><b>${item.id}</b></td>
-                    <td><small>${item.fecha}</small></td>
-                    <td>${item.cliente}</td>
-                    <td>${item.cedula}</td>
-                    <td>${item.empresa}</td>
+                    <td><small>${item.tipo}</small></td><td><b>${item.id}</b></td><td><small>${item.fecha}</small></td>
+                    <td>${item.cliente}</td><td>${item.cedula}</td><td>${item.empresa}</td>
                     <td style="color:${item.estado === 'Excelente' || item.estado === 'Bueno' ? 'var(--success)' : 'var(--danger)'}">${item.estado}</td>
-                    <td>${item.encargado}</td>
-                    <td>${item.seniat}</td>
-                    <td>${item.almacenista}</td>
+                    <td>${item.encargado}</td><td>${item.seniat}</td><td>${item.almacenista}</td>
                     <td>${item.foto ? `<img src="${item.foto}" class="img-table">` : 'N/A'}</td>
-                    <td>
-                        <button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])">📄</button>
-                        <button class="action-btn btn-del" onclick="eliminar(${index})">🗑️</button>
-                    </td>
+                    <td><button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])">📄</button><button class="action-btn btn-del" onclick="eliminar(${index})">🗑️</button></td>
                 </tr>`;
             }
         });
     }
 
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v20', JSON.stringify(db)); actualizarUI(); } }
+    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v21', JSON.stringify(db)); actualizarUI(); } }
     function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
-    function exportarExcel() { const clean = db.map(({foto, ...r}) => r); const ws = XLSX.utils.json_to_sheet(clean); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM_General.xlsx"); }
-    
+    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte"); XLSX.writeFile(wb, "Reporte_SCCAM_Total.xlsx"); }
     actualizarUI();
 </script>
 </body>
