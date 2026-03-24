@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Control Aduanero</title>
+    <title>S.C.C.A.M. Elite - Base de Datos Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -27,9 +27,6 @@
         .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
         .stat-badge { position: absolute; top: 5px; right: 5px; font-size: 0.5rem; background: #334155; padding: 2px 5px; border-radius: 4px; color: var(--accent); }
 
-        /* Avisos de Inteligencia de Datos */
-        .intel-alert { background: #064e3b; color: #a7f3d0; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 0.7rem; display: none; border-left: 4px solid var(--success); }
-
         .tabs { display: flex; gap: 5px; }
         .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; }
         .tab.active { background: white; color: #0f172a; }
@@ -51,18 +48,11 @@
         .btn-download { background: var(--success); color: white; display: none; }
         .btn-cam-toggle { background: #6366f1; color: white; margin-bottom: 5px; }
 
-        .search-box { margin-bottom: 15px; background: #1e293b; padding: 10px; border-radius: 10px; }
-        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 12px; width: 100%; border-radius: 10px; }
-
         .history-section { margin-top: 25px; background: var(--card); border-radius: 10px; padding: 12px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 1400px; }
         th { text-align: left; padding: 12px; color: #94a3b8; font-size: 0.7rem; border-bottom: 1px solid #334155; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; }
-        .img-table { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #334155; }
-
-        .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: white; margin-right: 4px; }
-        .btn-del { background: var(--danger); }
-        .btn-pdf { background: #3b82f6; }
+        .img-table { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -76,18 +66,9 @@
     <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA AÉREA Y MARÍTIMA</h1></div>
 
     <div class="dashboard">
-        <div class="stat-card">
-            <span class="stat-badge" id="badgeModo">MAR</span>
-            <h4>REGISTROS</h4>
-            <p id="cTotal" style="color:var(--accent)">0</p>
-        </div>
-        <div id="incidenciaCard" class="stat-card">
-            <h4>INCIDENCIAS</h4>
-            <p id="cInc" style="color:var(--danger)">0</p>
-        </div>
+        <div class="stat-card"><span class="stat-badge" id="badgeModo">MAR</span><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
+        <div id="incidenciaCard" class="stat-card"><h4>INCIDENCIAS</h4><p id="cInc" style="color:var(--danger)">0</p></div>
     </div>
-
-    <div id="intelAlert" class="intel-alert"></div>
 
     <div class="tabs">
         <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
@@ -98,17 +79,17 @@
         <div class="form-grid">
             <input type="hidden" id="editIndex" value="-1">
             
-            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
+            <div><label>N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelBultos">Seguridad (Precinto/Bultos)</label><input type="text" id="bultos"></div>
+            <div><label id="labelBultos">Seguridad</label><input type="text" id="bultos"></div>
             
-            <div><label>Inspector Actuante</label><input type="text" id="encargado" oninput="dbLookup('encargado')"></div>
-            <div><label>Encargado Almacén</label><input type="text" id="almacenista" oninput="dbLookup('almacenista')"></div>
-            <div><label style="color:#d97706">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" oninput="dbLookup('seniat')" style="background:#fffbeb"></div>
+            <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
+            <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
+            <div><label style="color:#d97706">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" list="listSeniat" style="background:#fffbeb"></div>
             
-            <div><label>Nombre del Cliente</label><input type="text" id="cliente" oninput="dbLookup('cliente')"></div>
+            <div><label>Nombre del Cliente</label><input type="text" id="cliente" list="listClientes" onchange="autoRellenarCliente(this.value)"></div>
             <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
-            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" oninput="dbLookup('empresa')"></div>
+            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" list="listEmpresas"></div>
 
             <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
             <div class="full"><label style="color:#be123c">⚠️ Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2"></textarea></div>
@@ -127,24 +108,27 @@
             <div class="full">
                 <button type="button" class="btn btn-cam-toggle" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 ¿DESEA INCLUIR FOTO?</button>
                 <div id="seccionCamara" class="camera-box hidden">
-                    <button class="btn" style="background:#10b981; color:white; padding:10px;" onclick="initCamera()">ENCENDER CÁMARA</button>
+                    <button class="btn" style="background:#10b981; color:white; padding:10px;" onclick="initCamera()">CÁMARA</button>
                     <video id="video" autoplay playsinline class="hidden"></video>
                     <button id="snap" class="btn hidden" style="background:var(--danger); color:white; margin-top:10px" onclick="takePhoto()">CAPTURAR</button>
                     <img id="photoPreview" class="hidden">
                     <canvas id="canvas" class="hidden"></canvas>
-                    <button class="btn" style="background:#64748b; color:white; margin-top:10px; padding:8px" onclick="cancelarFoto()">CANCELAR</button>
                 </div>
             </div>
-
             <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
         </div>
-
         <div class="actions">
             <button id="btnGuardar" class="btn btn-save" onclick="registrar()">REGISTRAR DATOS</button>
             <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA PDF</button>
-            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">REPORTE EXCEL GENERAL</button>
+            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">EXCEL GENERAL</button>
         </div>
     </div>
+
+    <datalist id="listInspectores"></datalist>
+    <datalist id="listAlmacenistas"></datalist>
+    <datalist id="listSeniat"></datalist>
+    <datalist id="listClientes"></datalist>
+    <datalist id="listEmpresas"></datalist>
 
     <div class="history-section">
         <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR EN HISTORIAL..."></div>
@@ -160,7 +144,7 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v40')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v50')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
@@ -174,33 +158,27 @@
         reader.readAsDataURL(e.target.files[0]);
     }
 
-    // LÓGICA DE BÚSQUEDA INTELIGENTE (RECONOCIMIENTO AUTOMÁTICO)
-    function dbLookup(field) {
-        const val = document.getElementById(field === 'empresa' ? 'empresaCliente' : field).value.trim().toLowerCase();
-        const alertBox = document.getElementById('intelAlert');
-
-        if(val.length < 3) { alertBox.style.display = 'none'; return; }
-
-        const match = db.find(item => 
-            (field === 'cliente' && item.cliente.toLowerCase() === val) ||
-            (field === 'empresa' && item.empresa.toLowerCase() === val) ||
-            (field === 'encargado' && item.encargado.toLowerCase() === val) ||
-            (field === 'almacenista' && item.almacenista.toLowerCase() === val) ||
-            (field === 'seniat' && item.seniat.toLowerCase() === val)
-        );
-
+    // AUTO-RELLENO BASADO EN SELECCIÓN DE CLIENTE
+    function autoRellenarCliente(nombre) {
+        const match = db.find(i => i.cliente === nombre);
         if(match) {
-            alertBox.innerHTML = `<strong>✨ Reconocido:</strong> Datos de "${val}" recuperados del historial.`;
-            alertBox.style.display = 'block';
-            
-            // Auto-relleno de datos relacionados
-            if(field === 'cliente' || field === 'empresa') {
-                document.getElementById('cliente').value = match.cliente;
-                document.getElementById('cedulaCliente').value = match.cedula;
-                document.getElementById('empresaCliente').value = match.empresa;
-            }
-        } else {
-            alertBox.style.display = 'none';
+            document.getElementById('cedulaCliente').value = match.cedula;
+            document.getElementById('empresaCliente').value = match.empresa;
+        }
+    }
+
+    // ACTUALIZAR LAS LISTAS DESPLEGABLES (DATA-LISTS)
+    function actualizarListas() {
+        const lists = {
+            listInspectores: [...new Set(db.map(i => i.encargado))],
+            listAlmacenistas: [...new Set(db.map(i => i.almacenista))],
+            listSeniat: [...new Set(db.map(i => i.seniat))],
+            listClientes: [...new Set(db.map(i => i.cliente))],
+            listEmpresas: [...new Set(db.map(i => i.empresa))]
+        };
+        for(let id in lists) {
+            const dl = document.getElementById(id);
+            dl.innerHTML = lists[id].map(val => val ? `<option value="${val}">` : '').join('');
         }
     }
 
@@ -214,7 +192,6 @@
         modoActual = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
-        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía";
         document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
         actualizarUI();
     }
@@ -239,10 +216,11 @@
         };
         if(!item.id || !item.cliente) return alert("Complete los campos.");
         db.push(item);
-        localStorage.setItem('sccam_final_v40', JSON.stringify(db));
+        localStorage.setItem('sccam_final_v50', JSON.stringify(db));
         currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
         actualizarUI();
+        actualizarListas();
     }
 
     function descargarActaManual() { if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); } }
@@ -254,17 +232,14 @@
         doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
         doc.line(15, 32, 195, 32);
         let y = 40; doc.setFontSize(10);
-        const fields = [["ID:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], ["CÉDULA:", item.cedula], ["EMPRESA:", item.empresa], ["ESTADO:", item.estado]];
+        const fields = [["ID CARGA:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], ["RIF/CEDULA:", item.cedula], ["EMPRESA:", item.empresa], ["ESTADO:", item.estado]];
         fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
         if(item.foto) doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45);
         
-        // TRIPLE FIRMA SOLICITADA
         const ySign = 260;
-        doc.setFontSize(8);
         doc.line(15, ySign, 65, ySign); doc.text(`INSPECTOR: ${item.encargado}`, 15, ySign + 5);
         doc.line(75, ySign, 125, ySign); doc.text(`ALMACÉN: ${item.almacenista}`, 75, ySign + 5);
         doc.line(135, ySign, 185, ySign); doc.text(`SENIAT: ${item.seniat || 'N/A'} (Opcional)`, 135, ySign + 5);
-        
         doc.save(`ACTA_${item.id}.pdf`);
     }
 
@@ -291,9 +266,11 @@
         });
     }
 
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v40', JSON.stringify(db)); actualizarUI(); } }
-    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); document.getElementById('intelAlert').style.display = 'none'; }
-    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
+    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v50', JSON.stringify(db)); actualizarUI(); actualizarListas(); } }
+    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
+    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
+    
+    actualizarListas();
     actualizarUI();
 </script>
 </body>
