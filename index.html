@@ -21,13 +21,16 @@
         .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
         .header-app h1 { font-size: 1rem; color: var(--accent); margin: 0; text-transform: uppercase; }
 
+        /* Dashboard Dinámico */
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; overflow: hidden; }
+        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
         .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
-        
+        .stat-badge { position: absolute; top: 5px; right: 5px; font-size: 0.5rem; background: #334155; padding: 2px 5px; border-radius: 4px; color: var(--accent); }
+
         .tabs { display: flex; gap: 5px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; }
-        .tab.active { background: white; color: #0f172a; }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; transition: 0.3s; }
+        .tab.active { background: white; color: #0f172a; box-shadow: 0 -4px 10px rgba(34, 211, 238, 0.2); }
 
         .main-card { background: white; color: #1e293b; padding: 18px; border-radius: 0 10px 10px 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
@@ -36,25 +39,26 @@
         label { display: block; font-weight: 700; font-size: 0.65rem; margin-bottom: 4px; color: #475569; text-transform: uppercase; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
         
-        .camera-section { background: #f1f5f9; padding: 10px; border-radius: 10px; border: 2px dashed #cbd5e1; text-align: center; }
-        #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 5px; }
+        .camera-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 2px solid #e2e8f0; margin-top: 5px; }
+        .hidden { display: none; }
+        #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid #cbd5e1; }
 
         .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
         .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; }
         .btn-save { background: #0f172a; color: white; }
-        .btn-download { background: var(--success); color: white; display: none; margin-top: 5px; }
+        .btn-download { background: var(--success); color: white; display: none; }
+        .btn-cam-toggle { background: #6366f1; color: white; margin-bottom: 5px; }
 
         .search-box { margin-bottom: 15px; background: #1e293b; padding: 10px; border-radius: 10px; }
-        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; width: 100%; border-radius: 8px; }
+        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 12px; width: 100%; border-radius: 10px; }
 
         .history-section { margin-top: 25px; background: var(--card); border-radius: 10px; padding: 12px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 950px; }
-        th { text-align: left; padding: 10px; color: #94a3b8; font-size: 0.65rem; border-bottom: 1px solid #334155; text-transform: uppercase; }
-        td { padding: 10px; border-bottom: 1px solid #334155; font-size: 0.75rem; }
-        .img-table { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
+        table { width: 100%; border-collapse: collapse; min-width: 1400px; }
+        th { text-align: left; padding: 12px; color: #94a3b8; font-size: 0.7rem; border-bottom: 1px solid #334155; text-transform: uppercase; white-space: nowrap; }
+        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; white-space: nowrap; }
+        .img-table { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #334155; }
 
-        .action-btn { border: none; padding: 8px; border-radius: 5px; cursor: pointer; color: white; margin-right: 3px; font-size: 0.8rem; }
-        .btn-edit { background: var(--warning); color: #000; }
+        .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: white; margin-right: 4px; }
         .btn-del { background: var(--danger); }
         .btn-pdf { background: #3b82f6; }
     </style>
@@ -67,13 +71,18 @@
         <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
     </div>
 
-    <div class="header-app">
-        <h1>SISTEMA DE CONTROL DE CARGA AÉREA Y MARÍTIMA</h1>
-    </div>
+    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA AÉREA Y MARÍTIMA</h1></div>
 
     <div class="dashboard">
-        <div class="stat-card"><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
-        <div id="incidenciaCard" class="stat-card"><h4>INCIDENCIAS</h4><p id="cInc" style="color:var(--danger)">0</p></div>
+        <div class="stat-card">
+            <span class="stat-badge" id="badgeModo">MAR</span>
+            <h4>REGISTROS</h4>
+            <p id="cTotal" style="color:var(--accent)">0</p>
+        </div>
+        <div id="incidenciaCard" class="stat-card">
+            <h4>INCIDENCIAS</h4>
+            <p id="cInc" style="color:var(--danger)">0</p>
+        </div>
     </div>
 
     <div class="tabs">
@@ -85,9 +94,9 @@
         <div class="form-grid">
             <input type="hidden" id="editIndex" value="-1">
             
-            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
+            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelBultos">Seguridad (Precinto/Bultos)</label><input type="text" id="bultos"></div>
+            <div><label id="labelBultos">N° Precinto</label><input type="text" id="bultos"></div>
             <div><label>Inspector Actuante</label><input type="text" id="encargado"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
             <div><label style="color:#d97706">Funcionario SENIAT</label><input type="text" id="seniat" style="background:#fffbeb"></div>
@@ -95,9 +104,8 @@
             <div><label>Nombre del Cliente</label><input type="text" id="cliente"></div>
             <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
             <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente"></div>
-
             <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
-            <div class="full"><label style="color:#be123c">⚠️ Carga NO Declarada (Hallazgos)</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2"></textarea></div>
+            <div class="full"><label style="color:#be123c">⚠️ Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2"></textarea></div>
             
             <div>
                 <label>Condición Física</label>
@@ -109,32 +117,49 @@
                     <option value="Sello Violado">Sello Violado 🚫</option>
                 </select>
             </div>
-            <div class="camera-section full">
-                <button class="btn" style="background:#a855f7; color:white; padding:10px;" onclick="initCamera()">📸 CÁMARA</button>
-                <video id="video" autoplay playsinline style="display:none"></video>
-                <button id="snap" class="btn" style="display:none; background:var(--danger); color:white; margin-top:5px" onclick="takePhoto()">CAPTURAR EVIDENCIA</button>
-                <img id="photoPreview" style="display:none">
-                <canvas id="canvas" style="display:none"></canvas>
+
+            <div class="full">
+                <button type="button" class="btn btn-cam-toggle" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 ¿DESEA INCLUIR FOTO DE LA CARGA?</button>
+                <div id="seccionCamara" class="camera-box hidden">
+                    <button class="btn" style="background:#10b981; color:white; padding:10px;" onclick="initCamera()">ENCENDER CÁMARA</button>
+                    <video id="video" autoplay playsinline class="hidden"></video>
+                    <button id="snap" class="btn hidden" style="background:var(--danger); color:white; margin-top:10px" onclick="takePhoto()">CAPTURAR AHORA</button>
+                    <img id="photoPreview" class="hidden">
+                    <canvas id="canvas" class="hidden"></canvas>
+                    <button class="btn" style="background:#64748b; color:white; margin-top:10px; padding:8px" onclick="cancelarFoto()">CANCELAR / QUITAR FOTO</button>
+                </div>
             </div>
+
             <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
         </div>
+
         <div class="actions">
-            <button id="btnGuardar" class="btn btn-save" onclick="registrar()">REGISTRAR Y PROCESAR</button>
-            <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA EN DISPOSITIVO</button>
+            <button id="btnGuardar" class="btn btn-save" onclick="registrar()">REGISTRAR DATOS</button>
+            <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA PDF</button>
             <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">REPORTE EXCEL GENERAL</button>
         </div>
     </div>
 
     <div class="history-section">
-        <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar por ID, Cliente o Empresa..."></div>
-        <table id="tablaDatos">
+        <div class="search-box">
+            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 FILTRAR EN HISTORIAL ACTUAL...">
+        </div>
+        
+        <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Estado</th>
-                    <th>Cliente / Empresa</th>
-                    <th>Foto</th>
-                    <th>Acciones</th>
+                    <th>TIPO</th>
+                    <th>ID CARGA</th>
+                    <th>FECHA</th>
+                    <th>CLIENTE</th>
+                    <th>CÉDULA</th>
+                    <th>EMPRESA</th>
+                    <th>ESTADO</th>
+                    <th>INSPECTOR</th>
+                    <th>SENIAT</th>
+                    <th>ALMACÉN</th>
+                    <th>FOTO</th>
+                    <th>ACCIONES</th>
                 </tr>
             </thead>
             <tbody id="cuerpoTabla"></tbody>
@@ -143,43 +168,41 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v15')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v20')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
     let stream;
 
     if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
+
     function loadLogo(e) {
         const reader = new FileReader();
         reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
         reader.readAsDataURL(e.target.files[0]);
     }
-    async function initCamera() {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video').srcObject = stream;
-        document.getElementById('video').style.display = 'block'; document.getElementById('snap').style.display = 'block';
-    }
-    function takePhoto() {
-        const c = document.getElementById('canvas'); const v = document.getElementById('video');
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
-        const data = c.toDataURL('image/jpeg', 0.6);
-        document.getElementById('photoPreview').src = data; document.getElementById('photoPreview').style.display = 'block';
-        if(stream) stream.getTracks().forEach(t => t.stop());
-        v.style.display = 'none'; document.getElementById('snap').style.display = 'none';
-    }
 
+    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); document.getElementById('toggleCamBtn').classList.add('hidden'); }
+    function cancelarFoto() { if(stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('seccionCamara').classList.add('hidden'); document.getElementById('toggleCamBtn').classList.remove('hidden'); document.getElementById('photoPreview').src = ''; document.getElementById('photoPreview').classList.add('hidden'); document.getElementById('video').classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
+
+    async function initCamera() { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); }
+    function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); const prev = document.getElementById('photoPreview'); prev.src = data; prev.classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
+
+    // FUNCIÓN DE CAMBIO DE MODO MEJORADA
     function cambiarModo(m) {
         modoActual = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
+        
+        // Actualizar etiquetas
         document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía";
-        actualizarUI();
+        document.getElementById('labelBultos').innerText = m === 'Marítimo' ? "N° Precinto" : "Bultos Reconocidos";
+        document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
+        
+        actualizarUI(); // Actualiza contadores y tabla según el modo
     }
 
     function registrar() {
-        const editIndex = parseInt(document.getElementById('editIndex').value);
         const item = {
             id: document.getElementById('idPrincipal').value,
             tipo: modoActual,
@@ -195,88 +218,81 @@
             noDeclarado: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
             obs: document.getElementById('obs').value,
-            foto: document.getElementById('photoPreview').src
+            foto: document.getElementById('photoPreview').src || ''
         };
+
         if(!item.id || !item.cliente) return alert("Complete los campos obligatorios.");
-        
-        if(editIndex === -1) { db.push(item); } else { db[editIndex] = item; document.getElementById('editIndex').value = "-1"; document.getElementById('btnGuardar').innerText = "REGISTRAR Y PROCESAR"; document.getElementById('btnGuardar').style.background = "#0f172a"; }
-        
-        localStorage.setItem('sccam_final_v15', JSON.stringify(db));
+        db.push(item);
+        localStorage.setItem('sccam_final_v20', JSON.stringify(db));
         currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
         actualizarUI();
-        alert("¡Registro guardado!");
     }
 
-    function descargarActaManual() {
-        if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); }
-    }
+    function descargarActaManual() { if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); } }
 
     function generarPDF(item) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
-        doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 50, 20);
-        doc.setFontSize(9); doc.text(`Modalidad: ${item.tipo} | Fecha: ${item.fecha}`, 50, 26);
-        doc.line(15, 40, 195, 40);
-        doc.setFont(undefined, 'bold'); doc.text("DATOS DEL CLIENTE", 15, 48); doc.setFont(undefined, 'normal');
-        doc.text(`Cliente: ${item.cliente} | ID: ${item.cedula}`, 15, 55);
-        doc.text(`Empresa: ${item.empresa}`, 15, 62);
-        doc.line(15, 66, 195, 66);
-        doc.text(`Identificador Carga: ${item.id}`, 15, 74);
-        doc.text(`Estado: ${item.estado} | Contenido: ${item.contenido}`, 15, 81);
-        if(item.noDeclarado) { doc.setTextColor(200,0,0); doc.text(` HALLAZGO: ${item.noDeclarado}`, 15, 89); doc.setTextColor(0); }
-        if(item.foto) doc.addImage(item.foto, 'JPEG', 15, 95, 70, 50);
-        doc.text("________________", 20, 240); doc.text("INSPECTOR", 25, 245);
-        doc.text("________________", 80, 240); doc.text("SENIAT", 85, 245);
-        doc.text("________________", 140, 240); doc.text("ALMACÉN", 145, 245);
-        doc.save(`Acta_${item.id}.pdf`);
+        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 20, 20);
+        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
+        doc.setFontSize(8); doc.text(`Cliente: ${item.cliente} | Empresa: ${item.empresa}`, 15, 35);
+        doc.line(15, 38, 195, 38);
+        let y = 45;
+        const fields = [ ["Identificador:", item.id], ["Modalidad:", item.tipo], ["Fecha:", item.fecha], ["Cédula/RIF:", item.cedula], ["Seguridad:", item.bultos], ["Contenido:", item.contenido], ["Estado:", item.estado], ["Inspector:", item.encargado], ["SENIAT:", item.seniat], ["Almacén:", item.almacenista] ];
+        fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
+        if(item.foto) { doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45); }
+        doc.save(`ACTA_${item.id}.pdf`);
     }
 
+    // ACTUALIZACIÓN DE INTERFAZ FILTRADA
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
-        const filtro = document.getElementById('buscador').value.toLowerCase();
+        const filtroBusqueda = document.getElementById('buscador').value.toLowerCase();
         cuerpo.innerHTML = '';
-        db.slice().reverse().forEach((item) => {
+        
+        // FILTRAR BASE DE DATOS POR EL MODO ACTUAL (MARÍTIMO O AÉREO)
+        const registrosModo = db.filter(item => item.tipo === modoActual);
+        
+        // CALCULAR CONTADORES SOLO PARA EL MODO ACTUAL
+        const totalModo = registrosModo.length;
+        const incidenciasModo = registrosModo.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
+
+        document.getElementById('cTotal').innerText = totalModo;
+        document.getElementById('cInc').innerText = incidenciasModo;
+        document.getElementById('incidenciaCard').style.borderColor = incidenciasModo > 0 ? 'var(--danger)' : '#334155';
+
+        // MOSTRAR TABLA FILTRADA POR MODO Y BUSQUEDA
+        registrosModo.slice().reverse().forEach((item) => {
             const index = db.indexOf(item);
-            const rowText = `${item.id} ${item.cliente} ${item.empresa}`.toLowerCase();
-            if(rowText.includes(filtro)) {
+            const rowText = `${item.id} ${item.cliente} ${item.empresa} ${item.cedula}`.toLowerCase();
+            
+            if(rowText.includes(filtroBusqueda)) {
                 cuerpo.innerHTML += `<tr>
+                    <td><small>${item.tipo}</small></td>
                     <td><b>${item.id}</b></td>
-                    <td>${item.estado}</td>
-                    <td>${item.cliente}<br><small>${item.empresa}</small></td>
-                    <td><img src="${item.foto || ''}" class="img-table"></td>
+                    <td><small>${item.fecha}</small></td>
+                    <td>${item.cliente}</td>
+                    <td>${item.cedula}</td>
+                    <td>${item.empresa}</td>
+                    <td style="color:${item.estado === 'Excelente' || item.estado === 'Bueno' ? 'var(--success)' : 'var(--danger)'}">${item.estado}</td>
+                    <td>${item.encargado}</td>
+                    <td>${item.seniat}</td>
+                    <td>${item.almacenista}</td>
+                    <td>${item.foto ? `<img src="${item.foto}" class="img-table">` : 'N/A'}</td>
                     <td>
                         <button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])">📄</button>
-                        <button class="action-btn btn-edit" onclick="editar(${index})">✏️</button>
                         <button class="action-btn btn-del" onclick="eliminar(${index})">🗑️</button>
                     </td>
                 </tr>`;
             }
         });
-        document.getElementById('cTotal').innerText = db.length;
-        document.getElementById('cInc').innerText = db.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
     }
 
-    function editar(idx) {
-        const item = db[idx]; document.getElementById('editIndex').value = idx; cambiarModo(item.tipo);
-        document.getElementById('idPrincipal').value = item.id; document.getElementById('fechaHora').value = item.fecha.replace(' ', 'T'); document.getElementById('bultos').value = item.bultos;
-        document.getElementById('encargado').value = item.encargado; document.getElementById('almacenista').value = item.almacenista; document.getElementById('seniat').value = item.seniat;
-        document.getElementById('cliente').value = item.cliente; document.getElementById('cedulaCliente').value = item.cedula; document.getElementById('empresaCliente').value = item.empresa;
-        document.getElementById('contenido').value = item.contenido; document.getElementById('noDeclarada').value = item.noDeclarado; document.getElementById('estado').value = item.estado; document.getElementById('obs').value = item.obs;
-        if(item.foto) { document.getElementById('photoPreview').src = item.foto; document.getElementById('photoPreview').style.display = 'block'; }
-        document.getElementById('btnGuardar').innerText = "ACTUALIZAR REGISTRO"; document.getElementById('btnGuardar').style.background = "var(--warning)"; window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v15', JSON.stringify(db)); actualizarUI(); } }
-    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); document.getElementById('photoPreview').style.display = 'none'; }
-    function exportarExcel() {
-        const clean = db.map(({foto, ...r}) => r);
-        const ws = XLSX.utils.json_to_sheet(clean);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Inventario");
-        XLSX.writeFile(wb, "Reporte_Logistica.xlsx");
-    }
+    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v20', JSON.stringify(db)); actualizarUI(); } }
+    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
+    function exportarExcel() { const clean = db.map(({foto, ...r}) => r); const ws = XLSX.utils.json_to_sheet(clean); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM_General.xlsx"); }
+    
     actualizarUI();
 </script>
 </body>
