@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. - Sistema de Control de Carga</title>
+    <title>S.C.C.A.M. - Control de Carga Profesional</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -15,49 +15,42 @@
         body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         
         .logo-container { text-align: center; margin-bottom: 10px; cursor: pointer; }
-        .logo-placeholder { 
-            width: 100px; height: 100px; border: 2px dashed var(--accent); 
-            border-radius: 50%; display: inline-flex; align-items: center; 
-            justify-content: center; overflow: hidden; background: #1e293b;
-        }
+        .logo-placeholder { width: 90px; height: 90px; border: 2px dashed var(--accent); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: #1e293b; }
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 
-        .header-app { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .header-app h1 { font-size: 1.1rem; letter-spacing: 1px; color: var(--accent); margin: 0; text-transform: uppercase; }
+        .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .header-app h1 { font-size: 1rem; color: var(--accent); margin: 0; text-transform: uppercase; }
 
-        .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: var(--card); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
-        .stat-card p { margin: 5px 0 0; font-size: 1.6rem; font-weight: 800; }
+        .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; }
+        .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
         
-        .alert-active { background: #450a0a; border-color: var(--danger); animation: shake 0.5s infinite; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(2px); } 75% { transform: translateX(-2px); } }
-
         .tabs { display: flex; gap: 5px; }
-        .tab { flex: 1; padding: 15px; border: none; border-radius: 12px 12px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.8rem; }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; }
         .tab.active { background: white; color: #0f172a; }
 
-        .main-card { background: white; color: #1e293b; padding: 20px; border-radius: 0 12px 12px 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .main-card { background: white; color: #1e293b; padding: 18px; border-radius: 0 10px 10px 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         @media (min-width: 650px) { .form-grid { grid-template-columns: 1fr 1fr; } .full { grid-column: span 2; } }
 
-        label { display: block; font-weight: 700; font-size: 0.7rem; margin-bottom: 5px; color: #475569; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; }
+        label { display: block; font-weight: 700; font-size: 0.65rem; margin-bottom: 4px; color: #475569; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
         
-        .camera-section { background: #f1f5f9; padding: 15px; border-radius: 10px; border: 2px dashed #cbd5e1; text-align: center; }
-        #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 10px; }
+        .camera-section { background: #f1f5f9; padding: 10px; border-radius: 10px; border: 2px dashed #cbd5e1; text-align: center; }
+        #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 5px; }
 
-        .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; }
+        .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; }
         .btn-save { background: #0f172a; color: white; }
         .btn-download { background: var(--success); color: white; display: none; margin-top: 5px; }
 
-        .search-box { margin-bottom: 15px; background: #1e293b; padding: 10px; border-radius: 10px; border: 1px solid #334155; }
+        .search-box { margin-bottom: 15px; background: #1e293b; padding: 10px; border-radius: 10px; }
         .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; width: 100%; border-radius: 8px; }
 
-        .history-section { margin-top: 30px; background: var(--card); border-radius: 12px; padding: 15px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 850px; }
-        th { text-align: left; padding: 12px; color: #94a3b8; border-bottom: 1px solid #334155; font-size: 0.75rem; text-transform: uppercase; }
-        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.85rem; }
+        .history-section { margin-top: 25px; background: var(--card); border-radius: 10px; padding: 12px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 950px; }
+        th { text-align: left; padding: 10px; color: #94a3b8; font-size: 0.65rem; border-bottom: 1px solid #334155; text-transform: uppercase; }
+        td { padding: 10px; border-bottom: 1px solid #334155; font-size: 0.75rem; }
         .img-table { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
 
         .action-btn { border: none; padding: 8px; border-radius: 5px; cursor: pointer; color: white; margin-right: 3px; font-size: 0.8rem; }
@@ -70,7 +63,7 @@
 
 <div class="container">
     <div class="logo-container" onclick="document.getElementById('logoInput').click()">
-        <div class="logo-placeholder" id="logoDisplay"><span>SUBIR LOGO</span></div>
+        <div class="logo-placeholder" id="logoDisplay"><span>LOGOTIPO</span></div>
         <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
     </div>
 
@@ -92,22 +85,20 @@
         <div class="form-grid">
             <input type="hidden" id="editIndex" value="-1">
             
-            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal"></div>
+            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelBultos">N° Precinto</label><input type="text" id="bultos" placeholder="Dato de seguridad"></div>
-            
-            <div><label>Inspector Responsable</label><input type="text" id="encargado"></div>
-            <div><label style="color:#0ea5e9">Encargado de Almacén</label><input type="text" id="almacenista"></div>
+            <div><label id="labelBultos">Seguridad (Precinto/Bultos)</label><input type="text" id="bultos"></div>
+            <div><label>Inspector Actuante</label><input type="text" id="encargado"></div>
+            <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
             <div><label style="color:#d97706">Funcionario SENIAT</label><input type="text" id="seniat" style="background:#fffbeb"></div>
             
-            <div><label>Cliente / Consignatario</label><input type="text" id="cliente"></div>
-            <div class="full"><label>Contenido de la Carga</label><input type="text" id="contenido" placeholder="Descripción de mercancía"></div>
-            
-            <div class="full">
-                <label style="color:#be123c">⚠️ Hallazgos de Carga NO Declarada</label>
-                <textarea id="noDeclarada" style="background:#fff1f2; border-color:#fecdd3; color:#9f1239" rows="2" placeholder="Mercancía sobrante..."></textarea>
-            </div>
+            <div><label>Nombre del Cliente</label><input type="text" id="cliente"></div>
+            <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
+            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente"></div>
 
+            <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
+            <div class="full"><label style="color:#be123c">⚠️ Carga NO Declarada (Hallazgos)</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2"></textarea></div>
+            
             <div>
                 <label>Condición Física</label>
                 <select id="estado">
@@ -116,38 +107,32 @@
                     <option value="Dañado">Dañado ⚠️</option>
                     <option value="Mojado">Mojado 💧</option>
                     <option value="Sello Violado">Sello Violado 🚫</option>
-                    <option value="Bulto Faltante">Bulto Faltante 📉</option>
                 </select>
             </div>
-
             <div class="camera-section full">
-                <button class="btn" style="background:#a855f7; color:white; padding:12px;" onclick="initCamera()">📸 ACTIVAR CÁMARA</button>
+                <button class="btn" style="background:#a855f7; color:white; padding:10px;" onclick="initCamera()">📸 CÁMARA</button>
                 <video id="video" autoplay playsinline style="display:none"></video>
-                <button id="snap" class="btn" style="display:none; background:var(--danger); color:white; margin-top:10px" onclick="takePhoto()">CAPTURAR FOTO</button>
+                <button id="snap" class="btn" style="display:none; background:var(--danger); color:white; margin-top:5px" onclick="takePhoto()">CAPTURAR EVIDENCIA</button>
                 <img id="photoPreview" style="display:none">
                 <canvas id="canvas" style="display:none"></canvas>
             </div>
-
-            <div class="full"><label>Observaciones</label><textarea id="obs" rows="2"></textarea></div>
+            <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
         </div>
-
         <div class="actions">
             <button id="btnGuardar" class="btn btn-save" onclick="registrar()">REGISTRAR Y PROCESAR</button>
             <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA EN DISPOSITIVO</button>
-            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">DESCARGAR EXCEL GENERAL</button>
+            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">REPORTE EXCEL GENERAL</button>
         </div>
     </div>
 
     <div class="history-section">
-        <div class="search-box">
-            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar por ID, Cliente o Funcionario...">
-        </div>
+        <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar por ID, Cliente o Empresa..."></div>
         <table id="tablaDatos">
             <thead>
                 <tr>
-                    <th>ID Carga</th>
+                    <th>ID</th>
                     <th>Estado</th>
-                    <th>SENIAT</th>
+                    <th>Cliente / Empresa</th>
                     <th>Foto</th>
                     <th>Acciones</th>
                 </tr>
@@ -158,50 +143,38 @@
 </div>
 
 <script>
-    let modoActual = 'Marítimo';
-    let db = JSON.parse(localStorage.getItem('control_carga_v5')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v15')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
+    let currentPDFItem = null;
+    let modoActual = 'Marítimo';
     let stream;
-    let ultimoItemGuardado = null; // Para saber qué PDF descargar manualmente
 
     if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
-
     function loadLogo(e) {
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            appLogo = ev.target.result;
-            localStorage.setItem('srca_logo', appLogo);
-            document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
-        };
+        reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
         reader.readAsDataURL(e.target.files[0]);
     }
-
     async function initCamera() {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         document.getElementById('video').srcObject = stream;
-        document.getElementById('video').style.display = 'block';
-        document.getElementById('snap').style.display = 'block';
+        document.getElementById('video').style.display = 'block'; document.getElementById('snap').style.display = 'block';
     }
-
     function takePhoto() {
-        const canvas = document.getElementById('canvas');
-        const video = document.getElementById('video');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        const data = canvas.toDataURL('image/jpeg', 0.6);
-        document.getElementById('photoPreview').src = data;
-        document.getElementById('photoPreview').style.display = 'block';
-        if (stream) stream.getTracks().forEach(t => t.stop());
-        video.style.display = 'none';
-        document.getElementById('snap').style.display = 'none';
+        const c = document.getElementById('canvas'); const v = document.getElementById('video');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        const data = c.toDataURL('image/jpeg', 0.6);
+        document.getElementById('photoPreview').src = data; document.getElementById('photoPreview').style.display = 'block';
+        if(stream) stream.getTracks().forEach(t => t.stop());
+        v.style.display = 'none'; document.getElementById('snap').style.display = 'none';
     }
 
-    function cambiarModo(modo) {
-        modoActual = modo;
+    function cambiarModo(m) {
+        modoActual = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(modo === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
-        document.getElementById('labelId').innerText = modo === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
-        document.getElementById('labelBultos').innerText = modo === 'Marítimo' ? "N° Precinto" : "Bultos Reconocidos";
+        document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
+        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía";
         actualizarUI();
     }
 
@@ -216,78 +189,27 @@
             almacenista: document.getElementById('almacenista').value,
             seniat: document.getElementById('seniat').value,
             cliente: document.getElementById('cliente').value,
+            cedula: document.getElementById('cedulaCliente').value,
+            empresa: document.getElementById('empresaCliente').value,
             contenido: document.getElementById('contenido').value,
             noDeclarado: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
             obs: document.getElementById('obs').value,
             foto: document.getElementById('photoPreview').src
         };
-
         if(!item.id || !item.cliente) return alert("Complete los campos obligatorios.");
         
-        if(editIndex === -1) {
-            db.push(item);
-        } else {
-            db[editIndex] = item;
-            document.getElementById('editIndex').value = "-1";
-            document.getElementById('btnGuardar').innerText = "REGISTRAR Y PROCESAR";
-            document.getElementById('btnGuardar').style.background = "#0f172a";
-        }
+        if(editIndex === -1) { db.push(item); } else { db[editIndex] = item; document.getElementById('editIndex').value = "-1"; document.getElementById('btnGuardar').innerText = "REGISTRAR Y PROCESAR"; document.getElementById('btnGuardar').style.background = "#0f172a"; }
         
-        localStorage.setItem('control_carga_v5', JSON.stringify(db));
-        
-        // NO descarga automáticamente. Guarda referencia y muestra botón.
-        ultimoItemGuardado = item;
+        localStorage.setItem('sccam_final_v15', JSON.stringify(db));
+        currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
-        
         actualizarUI();
-        alert("¡Registro guardado con éxito! Puede descargar el acta ahora si lo desea.");
+        alert("¡Registro guardado!");
     }
 
     function descargarActaManual() {
-        if(ultimoItemGuardado) {
-            generarPDF(ultimoItemGuardado);
-            document.getElementById('btnDescargar').style.display = 'none';
-            limpiarFormulario();
-        }
-    }
-
-    function limpiarFormulario() {
-        ['idPrincipal', 'fechaHora', 'bultos', 'cliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('photoPreview').style.display = 'none';
-        document.getElementById('photoPreview').src = '';
-    }
-
-    function editar(index) {
-        const item = db[index];
-        document.getElementById('editIndex').value = index;
-        cambiarModo(item.tipo);
-        document.getElementById('idPrincipal').value = item.id;
-        document.getElementById('fechaHora').value = item.fecha.replace(' ', 'T');
-        document.getElementById('bultos').value = item.bultos;
-        document.getElementById('encargado').value = item.encargado;
-        document.getElementById('almacenista').value = item.almacenista;
-        document.getElementById('seniat').value = item.seniat;
-        document.getElementById('cliente').value = item.cliente;
-        document.getElementById('contenido').value = item.contenido;
-        document.getElementById('noDeclarada').value = item.noDeclarado;
-        document.getElementById('estado').value = item.estado;
-        document.getElementById('obs').value = item.obs;
-        if(item.foto) {
-            document.getElementById('photoPreview').src = item.foto;
-            document.getElementById('photoPreview').style.display = 'block';
-        }
-        document.getElementById('btnGuardar').innerText = "ACTUALIZAR REGISTRO";
-        document.getElementById('btnGuardar').style.background = "var(--warning)";
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function eliminar(index) {
-        if(confirm("¿Seguro que desea eliminar este registro?")) {
-            db.splice(index, 1);
-            localStorage.setItem('control_carga_v5', JSON.stringify(db));
-            actualizarUI();
-        }
+        if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); }
     }
 
     function generarPDF(item) {
@@ -297,56 +219,63 @@
         doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 50, 20);
         doc.setFontSize(9); doc.text(`Modalidad: ${item.tipo} | Fecha: ${item.fecha}`, 50, 26);
         doc.line(15, 40, 195, 40);
-        doc.text(`Identificador: ${item.id}`, 15, 50);
-        doc.text(`Cliente: ${item.cliente}`, 15, 57);
-        doc.text(`Estado: ${item.estado}`, 15, 64);
-        if(item.noDeclarado) { doc.setTextColor(200, 0, 0); doc.text(`NO DECLARADO: ${item.noDeclarado}`, 15, 72); doc.setTextColor(0); }
-        if(item.foto && item.foto.startsWith('data')) doc.addImage(item.foto, 'JPEG', 15, 85, 80, 60);
-        doc.text("________________", 20, 230); doc.text("INSPECTOR", 25, 235);
-        doc.text("________________", 80, 230); doc.text("SENIAT", 85, 235);
-        doc.text("________________", 140, 230); doc.text("ALMACÉN", 145, 235);
-        doc.save(`ACTA_${item.id}.pdf`);
+        doc.setFont(undefined, 'bold'); doc.text("DATOS DEL CLIENTE", 15, 48); doc.setFont(undefined, 'normal');
+        doc.text(`Cliente: ${item.cliente} | ID: ${item.cedula}`, 15, 55);
+        doc.text(`Empresa: ${item.empresa}`, 15, 62);
+        doc.line(15, 66, 195, 66);
+        doc.text(`Identificador Carga: ${item.id}`, 15, 74);
+        doc.text(`Estado: ${item.estado} | Contenido: ${item.contenido}`, 15, 81);
+        if(item.noDeclarado) { doc.setTextColor(200,0,0); doc.text(` HALLAZGO: ${item.noDeclarado}`, 15, 89); doc.setTextColor(0); }
+        if(item.foto) doc.addImage(item.foto, 'JPEG', 15, 95, 70, 50);
+        doc.text("________________", 20, 240); doc.text("INSPECTOR", 25, 245);
+        doc.text("________________", 80, 240); doc.text("SENIAT", 85, 245);
+        doc.text("________________", 140, 240); doc.text("ALMACÉN", 145, 245);
+        doc.save(`Acta_${item.id}.pdf`);
     }
 
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
         const filtro = document.getElementById('buscador').value.toLowerCase();
         cuerpo.innerHTML = '';
-        const total = db.length;
-        const incidencias = db.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
-        document.getElementById('cTotal').innerText = total;
-        document.getElementById('cInc').innerText = incidencias;
-        document.getElementById('incidenciaCard').className = incidencias > 0 ? 'stat-card alert-active' : 'stat-card';
-
-        db.forEach((item, index) => {
-            const dataRow = `${item.id} ${item.cliente} ${item.seniat}`.toLowerCase();
-            if(dataRow.includes(filtro)) {
-                const row = `
-                    <tr>
-                        <td><b>${item.id}</b></td>
-                        <td style="color:${(item.estado === 'Bueno' || item.estado === 'Excelente') ? '#10b981' : '#ef4444'}">${item.estado}</td>
-                        <td><small>${item.seniat}</small></td>
-                        <td><img src="${item.foto || ''}" class="img-table"></td>
-                        <td>
-                            <button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])" title="PDF">📄</button>
-                            <button class="action-btn btn-edit" onclick="editar(${index})" title="Editar">✏️</button>
-                            <button class="action-btn btn-del" onclick="eliminar(${index})" title="Eliminar">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-                cuerpo.insertAdjacentHTML('afterbegin', row);
+        db.slice().reverse().forEach((item) => {
+            const index = db.indexOf(item);
+            const rowText = `${item.id} ${item.cliente} ${item.empresa}`.toLowerCase();
+            if(rowText.includes(filtro)) {
+                cuerpo.innerHTML += `<tr>
+                    <td><b>${item.id}</b></td>
+                    <td>${item.estado}</td>
+                    <td>${item.cliente}<br><small>${item.empresa}</small></td>
+                    <td><img src="${item.foto || ''}" class="img-table"></td>
+                    <td>
+                        <button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])">📄</button>
+                        <button class="action-btn btn-edit" onclick="editar(${index})">✏️</button>
+                        <button class="action-btn btn-del" onclick="eliminar(${index})">🗑️</button>
+                    </td>
+                </tr>`;
             }
         });
+        document.getElementById('cTotal').innerText = db.length;
+        document.getElementById('cInc').innerText = db.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
     }
 
+    function editar(idx) {
+        const item = db[idx]; document.getElementById('editIndex').value = idx; cambiarModo(item.tipo);
+        document.getElementById('idPrincipal').value = item.id; document.getElementById('fechaHora').value = item.fecha.replace(' ', 'T'); document.getElementById('bultos').value = item.bultos;
+        document.getElementById('encargado').value = item.encargado; document.getElementById('almacenista').value = item.almacenista; document.getElementById('seniat').value = item.seniat;
+        document.getElementById('cliente').value = item.cliente; document.getElementById('cedulaCliente').value = item.cedula; document.getElementById('empresaCliente').value = item.empresa;
+        document.getElementById('contenido').value = item.contenido; document.getElementById('noDeclarada').value = item.noDeclarado; document.getElementById('estado').value = item.estado; document.getElementById('obs').value = item.obs;
+        if(item.foto) { document.getElementById('photoPreview').src = item.foto; document.getElementById('photoPreview').style.display = 'block'; }
+        document.getElementById('btnGuardar').innerText = "ACTUALIZAR REGISTRO"; document.getElementById('btnGuardar').style.background = "var(--warning)"; window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v15', JSON.stringify(db)); actualizarUI(); } }
+    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); document.getElementById('photoPreview').style.display = 'none'; }
     function exportarExcel() {
-        const datosLimpios = db.map(({foto, ...resto}) => ({
-            Modalidad: resto.tipo, Identificador: resto.id, Fecha: resto.fecha, Seguridad: resto.bultos, Cliente: resto.cliente, Contenido: resto.contenido, Hallazgos: resto.noDeclarado || "NINGUNO", Estado: resto.estado, Inspector: resto.encargado, Aduana: resto.seniat, Almacen: resto.almacenista, Observaciones: resto.obs
-        }));
-        const ws = XLSX.utils.json_to_sheet(datosLimpios);
+        const clean = db.map(({foto, ...r}) => r);
+        const ws = XLSX.utils.json_to_sheet(clean);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-        XLSX.writeFile(wb, "Reporte_Aduanero.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+        XLSX.writeFile(wb, "Reporte_Logistica.xlsx");
     }
     actualizarUI();
 </script>
