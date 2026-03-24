@@ -49,16 +49,21 @@
         .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; }
         .btn-save { background: #0f172a; color: white; }
+        .btn-download { background: var(--success); color: white; display: none; margin-top: 5px; }
 
-        /* Buscador Mejorado */
         .search-box { margin-bottom: 15px; background: #1e293b; padding: 10px; border-radius: 10px; border: 1px solid #334155; }
-        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; }
+        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 10px; width: 100%; border-radius: 8px; }
 
         .history-section { margin-top: 30px; background: var(--card); border-radius: 12px; padding: 15px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        table { width: 100%; border-collapse: collapse; min-width: 850px; }
         th { text-align: left; padding: 12px; color: #94a3b8; border-bottom: 1px solid #334155; font-size: 0.75rem; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.85rem; }
         .img-table { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
+
+        .action-btn { border: none; padding: 8px; border-radius: 5px; cursor: pointer; color: white; margin-right: 3px; font-size: 0.8rem; }
+        .btn-edit { background: var(--warning); color: #000; }
+        .btn-del { background: var(--danger); }
+        .btn-pdf { background: #3b82f6; }
     </style>
 </head>
 <body>
@@ -85,6 +90,8 @@
 
     <div class="main-card">
         <div class="form-grid">
+            <input type="hidden" id="editIndex" value="-1">
+            
             <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
             <div><label id="labelBultos">N° Precinto</label><input type="text" id="bultos" placeholder="Dato de seguridad"></div>
@@ -125,8 +132,9 @@
         </div>
 
         <div class="actions">
-            <button class="btn btn-save" onclick="registrar()">REGISTRAR Y GENERAR ACTA</button>
-            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">DESCARGAR EXCEL OPTIMIZADO</button>
+            <button id="btnGuardar" class="btn btn-save" onclick="registrar()">REGISTRAR Y PROCESAR</button>
+            <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA EN DISPOSITIVO</button>
+            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">DESCARGAR EXCEL GENERAL</button>
         </div>
     </div>
 
@@ -141,7 +149,7 @@
                     <th>Estado</th>
                     <th>SENIAT</th>
                     <th>Foto</th>
-                    <th>Acta</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="cuerpoTabla"></tbody>
@@ -154,6 +162,7 @@
     let db = JSON.parse(localStorage.getItem('control_carga_v5')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let stream;
+    let ultimoItemGuardado = null; // Para saber qué PDF descargar manualmente
 
     if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
 
@@ -182,7 +191,7 @@
         const data = canvas.toDataURL('image/jpeg', 0.6);
         document.getElementById('photoPreview').src = data;
         document.getElementById('photoPreview').style.display = 'block';
-        stream.getTracks().forEach(t => t.stop());
+        if (stream) stream.getTracks().forEach(t => t.stop());
         video.style.display = 'none';
         document.getElementById('snap').style.display = 'none';
     }
@@ -197,6 +206,7 @@
     }
 
     function registrar() {
+        const editIndex = parseInt(document.getElementById('editIndex').value);
         const item = {
             id: document.getElementById('idPrincipal').value,
             tipo: modoActual,
@@ -215,13 +225,69 @@
 
         if(!item.id || !item.cliente) return alert("Complete los campos obligatorios.");
         
-        db.push(item);
-        localStorage.setItem('control_carga_v5', JSON.stringify(db));
-        generarPDF(item);
+        if(editIndex === -1) {
+            db.push(item);
+        } else {
+            db[editIndex] = item;
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('btnGuardar').innerText = "REGISTRAR Y PROCESAR";
+            document.getElementById('btnGuardar').style.background = "#0f172a";
+        }
         
+        localStorage.setItem('control_carga_v5', JSON.stringify(db));
+        
+        // NO descarga automáticamente. Guarda referencia y muestra botón.
+        ultimoItemGuardado = item;
+        document.getElementById('btnDescargar').style.display = 'block';
+        
+        actualizarUI();
+        alert("¡Registro guardado con éxito! Puede descargar el acta ahora si lo desea.");
+    }
+
+    function descargarActaManual() {
+        if(ultimoItemGuardado) {
+            generarPDF(ultimoItemGuardado);
+            document.getElementById('btnDescargar').style.display = 'none';
+            limpiarFormulario();
+        }
+    }
+
+    function limpiarFormulario() {
         ['idPrincipal', 'fechaHora', 'bultos', 'cliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('photoPreview').style.display = 'none';
-        actualizarUI();
+        document.getElementById('photoPreview').src = '';
+    }
+
+    function editar(index) {
+        const item = db[index];
+        document.getElementById('editIndex').value = index;
+        cambiarModo(item.tipo);
+        document.getElementById('idPrincipal').value = item.id;
+        document.getElementById('fechaHora').value = item.fecha.replace(' ', 'T');
+        document.getElementById('bultos').value = item.bultos;
+        document.getElementById('encargado').value = item.encargado;
+        document.getElementById('almacenista').value = item.almacenista;
+        document.getElementById('seniat').value = item.seniat;
+        document.getElementById('cliente').value = item.cliente;
+        document.getElementById('contenido').value = item.contenido;
+        document.getElementById('noDeclarada').value = item.noDeclarado;
+        document.getElementById('estado').value = item.estado;
+        document.getElementById('obs').value = item.obs;
+        if(item.foto) {
+            document.getElementById('photoPreview').src = item.foto;
+            document.getElementById('photoPreview').style.display = 'block';
+        }
+        document.getElementById('btnGuardar').innerText = "ACTUALIZAR REGISTRO";
+        document.getElementById('btnGuardar').style.background = "var(--warning)";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function eliminar(index) {
+        if(confirm("¿Seguro que desea eliminar este registro?")) {
+            db.splice(index, 1);
+            localStorage.setItem('control_carga_v5', JSON.stringify(db));
+            actualizarUI();
+        }
     }
 
     function generarPDF(item) {
@@ -246,52 +312,42 @@
         const cuerpo = document.getElementById('cuerpoTabla');
         const filtro = document.getElementById('buscador').value.toLowerCase();
         cuerpo.innerHTML = '';
-        
         const total = db.length;
         const incidencias = db.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
         document.getElementById('cTotal').innerText = total;
         document.getElementById('cInc').innerText = incidencias;
         document.getElementById('incidenciaCard').className = incidencias > 0 ? 'stat-card alert-active' : 'stat-card';
 
-        db.slice().reverse().forEach((item) => {
+        db.forEach((item, index) => {
             const dataRow = `${item.id} ${item.cliente} ${item.seniat}`.toLowerCase();
             if(dataRow.includes(filtro)) {
-                cuerpo.innerHTML += `
+                const row = `
                     <tr>
                         <td><b>${item.id}</b></td>
                         <td style="color:${(item.estado === 'Bueno' || item.estado === 'Excelente') ? '#10b981' : '#ef4444'}">${item.estado}</td>
                         <td><small>${item.seniat}</small></td>
                         <td><img src="${item.foto || ''}" class="img-table"></td>
-                        <td><button onclick="generarPDF(db[${db.indexOf(item)}])">📄</button></td>
+                        <td>
+                            <button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])" title="PDF">📄</button>
+                            <button class="action-btn btn-edit" onclick="editar(${index})" title="Editar">✏️</button>
+                            <button class="action-btn btn-del" onclick="eliminar(${index})" title="Eliminar">🗑️</button>
+                        </td>
                     </tr>
                 `;
+                cuerpo.insertAdjacentHTML('afterbegin', row);
             }
         });
     }
 
     function exportarExcel() {
-        // Limpiamos los datos para que el Excel no contenga el código de las fotos (pesado)
         const datosLimpios = db.map(({foto, ...resto}) => ({
-            Modalidad: resto.tipo,
-            Identificador: resto.id,
-            Fecha: resto.fecha,
-            Seguridad: resto.bultos,
-            Cliente: resto.cliente,
-            Contenido: resto.contenido,
-            Hallazgos: resto.noDeclarado || "NINGUNO",
-            Estado: resto.estado,
-            Inspector: resto.encargado,
-            Aduana: resto.seniat,
-            Almacen: resto.almacenista,
-            Observaciones: resto.obs
+            Modalidad: resto.tipo, Identificador: resto.id, Fecha: resto.fecha, Seguridad: resto.bultos, Cliente: resto.cliente, Contenido: resto.contenido, Hallazgos: resto.noDeclarado || "NINGUNO", Estado: resto.estado, Inspector: resto.encargado, Aduana: resto.seniat, Almacen: resto.almacenista, Observaciones: resto.obs
         }));
-
         const ws = XLSX.utils.json_to_sheet(datosLimpios);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte_Aduanero");
-        XLSX.writeFile(wb, "Reporte_S_C_C_A_M.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+        XLSX.writeFile(wb, "Reporte_Aduanero.xlsx");
     }
-
     actualizarUI();
 </script>
 </body>
