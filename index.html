@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Control Pro</title>
+    <title>S.C.C.A.M. Elite - Control Aduanero</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -27,8 +27,8 @@
         .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
         .stat-badge { position: absolute; top: 5px; right: 5px; font-size: 0.5rem; background: #334155; padding: 2px 5px; border-radius: 4px; color: var(--accent); }
 
-        /* Alerta de Autocompletado */
-        .auto-alert { background: #064e3b; color: #a7f3d0; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 0.7rem; display: none; border-left: 4px solid var(--success); }
+        /* Avisos de Inteligencia de Datos */
+        .intel-alert { background: #064e3b; color: #a7f3d0; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 0.7rem; display: none; border-left: 4px solid var(--success); }
 
         .tabs { display: flex; gap: 5px; }
         .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; }
@@ -50,6 +50,9 @@
         .btn-save { background: #0f172a; color: white; }
         .btn-download { background: var(--success); color: white; display: none; }
         .btn-cam-toggle { background: #6366f1; color: white; margin-bottom: 5px; }
+
+        .search-box { margin-bottom: 15px; background: #1e293b; padding: 10px; border-radius: 10px; }
+        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 12px; width: 100%; border-radius: 10px; }
 
         .history-section { margin-top: 25px; background: var(--card); border-radius: 10px; padding: 12px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 1400px; }
@@ -84,7 +87,7 @@
         </div>
     </div>
 
-    <div id="autoAlert" class="auto-alert"></div>
+    <div id="intelAlert" class="intel-alert"></div>
 
     <div class="tabs">
         <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
@@ -98,13 +101,14 @@
             <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
             <div><label id="labelBultos">Seguridad (Precinto/Bultos)</label><input type="text" id="bultos"></div>
-            <div><label>Inspector Actuante</label><input type="text" id="encargado"></div>
-            <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
-            <div><label style="color:#d97706">Funcionario SENIAT</label><input type="text" id="seniat" style="background:#fffbeb"></div>
             
-            <div><label>Nombre del Cliente</label><input type="text" id="cliente" oninput="intelFill()"></div>
+            <div><label>Inspector Actuante</label><input type="text" id="encargado" oninput="dbLookup('encargado')"></div>
+            <div><label>Encargado Almacén</label><input type="text" id="almacenista" oninput="dbLookup('almacenista')"></div>
+            <div><label style="color:#d97706">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" oninput="dbLookup('seniat')" style="background:#fffbeb"></div>
+            
+            <div><label>Nombre del Cliente</label><input type="text" id="cliente" oninput="dbLookup('cliente')"></div>
             <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
-            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" oninput="intelFill()"></div>
+            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" oninput="dbLookup('empresa')"></div>
 
             <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
             <div class="full"><label style="color:#be123c">⚠️ Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2"></textarea></div>
@@ -156,7 +160,7 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v30')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v40')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
@@ -170,31 +174,31 @@
         reader.readAsDataURL(e.target.files[0]);
     }
 
-    // LÓGICA DE AUTO-COMPLETADO INTELIGENTE
-    function intelFill() {
-        const cNom = document.getElementById('cliente').value.trim();
-        const eNom = document.getElementById('empresaCliente').value.trim();
-        const alertBox = document.getElementById('autoAlert');
+    // LÓGICA DE BÚSQUEDA INTELIGENTE (RECONOCIMIENTO AUTOMÁTICO)
+    function dbLookup(field) {
+        const val = document.getElementById(field === 'empresa' ? 'empresaCliente' : field).value.trim().toLowerCase();
+        const alertBox = document.getElementById('intelAlert');
 
-        if(cNom.length < 3 && eNom.length < 3) {
-            alertBox.style.display = 'none';
-            return;
-        }
+        if(val.length < 3) { alertBox.style.display = 'none'; return; }
 
-        // Buscamos un registro previo exacto
         const match = db.find(item => 
-            (cNom && item.cliente.toLowerCase() === cNom.toLowerCase()) || 
-            (eNom && item.empresa.toLowerCase() === eNom.toLowerCase())
+            (field === 'cliente' && item.cliente.toLowerCase() === val) ||
+            (field === 'empresa' && item.empresa.toLowerCase() === val) ||
+            (field === 'encargado' && item.encargado.toLowerCase() === val) ||
+            (field === 'almacenista' && item.almacenista.toLowerCase() === val) ||
+            (field === 'seniat' && item.seniat.toLowerCase() === val)
         );
 
         if(match) {
-            // Auto-rellenamos los datos encontrados
-            document.getElementById('cedulaCliente').value = match.cedula;
-            document.getElementById('empresaCliente').value = match.empresa;
-            document.getElementById('cliente').value = match.cliente;
-
-            alertBox.innerHTML = `<strong>✨ Auto-completado:</strong> Se han recuperado los datos de <strong>${match.cliente}</strong> desde el historial.`;
+            alertBox.innerHTML = `<strong>✨ Reconocido:</strong> Datos de "${val}" recuperados del historial.`;
             alertBox.style.display = 'block';
+            
+            // Auto-relleno de datos relacionados
+            if(field === 'cliente' || field === 'empresa') {
+                document.getElementById('cliente').value = match.cliente;
+                document.getElementById('cedulaCliente').value = match.cedula;
+                document.getElementById('empresaCliente').value = match.empresa;
+            }
         } else {
             alertBox.style.display = 'none';
         }
@@ -211,7 +215,6 @@
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
         document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía";
-        document.getElementById('labelBultos').innerText = m === 'Marítimo' ? "N° Precinto" : "Bultos Reconocidos";
         document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
         actualizarUI();
     }
@@ -236,10 +239,9 @@
         };
         if(!item.id || !item.cliente) return alert("Complete los campos.");
         db.push(item);
-        localStorage.setItem('sccam_final_v30', JSON.stringify(db));
+        localStorage.setItem('sccam_final_v40', JSON.stringify(db));
         currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
-        document.getElementById('autoAlert').style.display = 'none';
         actualizarUI();
     }
 
@@ -252,9 +254,17 @@
         doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
         doc.line(15, 32, 195, 32);
         let y = 40; doc.setFontSize(10);
-        const fields = [["ID:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], ["CÉDULA:", item.cedula], ["EMPRESA:", item.empresa], ["ESTADO:", item.estado], ["INSPECTOR:", item.encargado], ["ALMACÉN:", item.almacenista]];
+        const fields = [["ID:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], ["CÉDULA:", item.cedula], ["EMPRESA:", item.empresa], ["ESTADO:", item.estado]];
         fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
         if(item.foto) doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45);
+        
+        // TRIPLE FIRMA SOLICITADA
+        const ySign = 260;
+        doc.setFontSize(8);
+        doc.line(15, ySign, 65, ySign); doc.text(`INSPECTOR: ${item.encargado}`, 15, ySign + 5);
+        doc.line(75, ySign, 125, ySign); doc.text(`ALMACÉN: ${item.almacenista}`, 75, ySign + 5);
+        doc.line(135, ySign, 185, ySign); doc.text(`SENIAT: ${item.seniat || 'N/A'} (Opcional)`, 135, ySign + 5);
+        
         doc.save(`ACTA_${item.id}.pdf`);
     }
 
@@ -281,9 +291,9 @@
         });
     }
 
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v30', JSON.stringify(db)); actualizarUI(); } }
-    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
-    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
+    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v40', JSON.stringify(db)); actualizarUI(); } }
+    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); document.getElementById('intelAlert').style.display = 'none'; }
+    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
     actualizarUI();
 </script>
 </body>
