@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. - Control de Carga Profesional</title>
+    <title>S.C.C.A.M. Elite - Control Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -23,9 +23,12 @@
 
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; }
-        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; }
+        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; }
         .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
         .stat-badge { position: absolute; top: 5px; right: 5px; font-size: 0.5rem; background: #334155; padding: 2px 5px; border-radius: 4px; color: var(--accent); }
+
+        /* Alerta de Autocompletado */
+        .auto-alert { background: #064e3b; color: #a7f3d0; padding: 8px; border-radius: 8px; margin-bottom: 10px; font-size: 0.7rem; display: none; border-left: 4px solid var(--success); }
 
         .tabs { display: flex; gap: 5px; }
         .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; }
@@ -48,13 +51,10 @@
         .btn-download { background: var(--success); color: white; display: none; }
         .btn-cam-toggle { background: #6366f1; color: white; margin-bottom: 5px; }
 
-        .search-box { margin-bottom: 15px; background: #1e293b; padding: 10px; border-radius: 10px; }
-        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 12px; width: 100%; border-radius: 10px; }
-
         .history-section { margin-top: 25px; background: var(--card); border-radius: 10px; padding: 12px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 1400px; }
-        th { text-align: left; padding: 12px; color: #94a3b8; font-size: 0.7rem; border-bottom: 1px solid #334155; text-transform: uppercase; white-space: nowrap; }
-        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; white-space: nowrap; }
+        th { text-align: left; padding: 12px; color: #94a3b8; font-size: 0.7rem; border-bottom: 1px solid #334155; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; }
         .img-table { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #334155; }
 
         .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: white; margin-right: 4px; }
@@ -84,6 +84,8 @@
         </div>
     </div>
 
+    <div id="autoAlert" class="auto-alert"></div>
+
     <div class="tabs">
         <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
         <button id="tabA" class="tab" onclick="cambiarModo('Aéreo')">✈️ AÉREO</button>
@@ -93,16 +95,17 @@
         <div class="form-grid">
             <input type="hidden" id="editIndex" value="-1">
             
-            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal"></div>
+            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelBultos">N° Precinto</label><input type="text" id="bultos"></div>
+            <div><label id="labelBultos">Seguridad (Precinto/Bultos)</label><input type="text" id="bultos"></div>
             <div><label>Inspector Actuante</label><input type="text" id="encargado"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
-            <div><label style="color:#d97706">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" style="background:#fffbeb"></div>
+            <div><label style="color:#d97706">Funcionario SENIAT</label><input type="text" id="seniat" style="background:#fffbeb"></div>
             
-            <div><label>Nombre del Cliente</label><input type="text" id="cliente"></div>
+            <div><label>Nombre del Cliente</label><input type="text" id="cliente" oninput="intelFill()"></div>
             <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
-            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente"></div>
+            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" oninput="intelFill()"></div>
+
             <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
             <div class="full"><label style="color:#be123c">⚠️ Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2"></textarea></div>
             
@@ -118,14 +121,14 @@
             </div>
 
             <div class="full">
-                <button type="button" class="btn btn-cam-toggle" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 ¿DESEA INCLUIR FOTO DE LA CARGA?</button>
+                <button type="button" class="btn btn-cam-toggle" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 ¿DESEA INCLUIR FOTO?</button>
                 <div id="seccionCamara" class="camera-box hidden">
                     <button class="btn" style="background:#10b981; color:white; padding:10px;" onclick="initCamera()">ENCENDER CÁMARA</button>
                     <video id="video" autoplay playsinline class="hidden"></video>
-                    <button id="snap" class="btn hidden" style="background:var(--danger); color:white; margin-top:10px" onclick="takePhoto()">CAPTURAR AHORA</button>
+                    <button id="snap" class="btn hidden" style="background:var(--danger); color:white; margin-top:10px" onclick="takePhoto()">CAPTURAR</button>
                     <img id="photoPreview" class="hidden">
                     <canvas id="canvas" class="hidden"></canvas>
-                    <button class="btn" style="background:#64748b; color:white; margin-top:10px; padding:8px" onclick="cancelarFoto()">CANCELAR / QUITAR FOTO</button>
+                    <button class="btn" style="background:#64748b; color:white; margin-top:10px; padding:8px" onclick="cancelarFoto()">CANCELAR</button>
                 </div>
             </div>
 
@@ -140,24 +143,11 @@
     </div>
 
     <div class="history-section">
-        <div class="search-box">
-            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 FILTRAR EN HISTORIAL ACTUAL...">
-        </div>
+        <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR EN HISTORIAL..."></div>
         <table id="tablaDatos">
             <thead>
                 <tr>
-                    <th>TIPO</th>
-                    <th>ID CARGA</th>
-                    <th>FECHA</th>
-                    <th>CLIENTE</th>
-                    <th>CÉDULA</th>
-                    <th>EMPRESA</th>
-                    <th>ESTADO</th>
-                    <th>INSPECTOR</th>
-                    <th>SENIAT</th>
-                    <th>ALMACÉN</th>
-                    <th>FOTO</th>
-                    <th>ACCIONES</th>
+                    <th>TIPO</th><th>ID CARGA</th><th>FECHA</th><th>CLIENTE</th><th>CÉDULA</th><th>EMPRESA</th><th>ESTADO</th><th>INSPECTOR</th><th>SENIAT</th><th>ALMACÉN</th><th>FOTO</th><th>ACCIONES</th>
                 </tr>
             </thead>
             <tbody id="cuerpoTabla"></tbody>
@@ -166,7 +156,7 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v21')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v30')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
@@ -178,6 +168,36 @@
         const reader = new FileReader();
         reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
         reader.readAsDataURL(e.target.files[0]);
+    }
+
+    // LÓGICA DE AUTO-COMPLETADO INTELIGENTE
+    function intelFill() {
+        const cNom = document.getElementById('cliente').value.trim();
+        const eNom = document.getElementById('empresaCliente').value.trim();
+        const alertBox = document.getElementById('autoAlert');
+
+        if(cNom.length < 3 && eNom.length < 3) {
+            alertBox.style.display = 'none';
+            return;
+        }
+
+        // Buscamos un registro previo exacto
+        const match = db.find(item => 
+            (cNom && item.cliente.toLowerCase() === cNom.toLowerCase()) || 
+            (eNom && item.empresa.toLowerCase() === eNom.toLowerCase())
+        );
+
+        if(match) {
+            // Auto-rellenamos los datos encontrados
+            document.getElementById('cedulaCliente').value = match.cedula;
+            document.getElementById('empresaCliente').value = match.empresa;
+            document.getElementById('cliente').value = match.cliente;
+
+            alertBox.innerHTML = `<strong>✨ Auto-completado:</strong> Se han recuperado los datos de <strong>${match.cliente}</strong> desde el historial.`;
+            alertBox.style.display = 'block';
+        } else {
+            alertBox.style.display = 'none';
+        }
     }
 
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); document.getElementById('toggleCamBtn').classList.add('hidden'); }
@@ -214,11 +234,12 @@
             obs: document.getElementById('obs').value,
             foto: document.getElementById('photoPreview').src || ''
         };
-        if(!item.id || !item.cliente) return alert("Complete los campos obligatorios.");
+        if(!item.id || !item.cliente) return alert("Complete los campos.");
         db.push(item);
-        localStorage.setItem('sccam_final_v21', JSON.stringify(db));
+        localStorage.setItem('sccam_final_v30', JSON.stringify(db));
         currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
+        document.getElementById('autoAlert').style.display = 'none';
         actualizarUI();
     }
 
@@ -228,35 +249,13 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 20, 20);
-        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO DIGITAL", 40, 20);
-        doc.setFontSize(8); doc.text(`Generado el: ${new Date().toLocaleString()}`, 40, 25);
+        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
         doc.line(15, 32, 195, 32);
-
-        let y = 40;
-        doc.setFontSize(10);
-        const fields = [
-            ["ID CARGA:", item.id], ["MODALIDAD:", item.tipo], ["FECHA CARGA:", item.fecha],
-            ["CLIENTE:", item.cliente], ["CÉDULA/RIF:", item.cedula], ["EMPRESA:", item.empresa],
-            ["SEGURIDAD:", item.bultos], ["ESTADO:", item.estado], ["CONTENIDO:", item.contenido]
-        ];
-        fields.forEach(f => { doc.setFont(undefined, 'bold'); doc.text(f[0], 15, y); doc.setFont(undefined, 'normal'); doc.text(f[1], 50, y); y += 7; });
-        
-        if(item.noDeclarado) { doc.setTextColor(200,0,0); doc.text(`HALLAZGO: ${item.noDeclarado}`, 15, y); y += 7; doc.setTextColor(0); }
-        if(item.foto) { doc.text("EVIDENCIA FOTOGRÁFICA:", 15, y); doc.addImage(item.foto, 'JPEG', 15, y+5, 70, 50); y += 60; }
-        
-        // SECCIÓN DE FIRMAS ACTUALIZADA
-        const ySign = 250;
-        doc.setFontSize(9);
-        doc.line(15, ySign, 65, ySign); doc.text("INSPECTOR", 30, ySign + 5, {align: 'center'});
-        doc.text(item.encargado || "Firma", 40, ySign - 2, {align: 'center'});
-
-        doc.line(75, ySign, 125, ySign); doc.text("ALMACENISTA", 100, ySign + 5, {align: 'center'});
-        doc.text(item.almacenista || "Firma", 100, ySign - 2, {align: 'center'});
-
-        doc.line(135, ySign, 185, ySign); doc.text("SENIAT", 160, ySign + 5, {align: 'center'});
-        doc.text(item.seniat || "Opcional", 160, ySign - 2, {align: 'center'});
-
-        doc.save(`ACTA_SCCAM_${item.id}.pdf`);
+        let y = 40; doc.setFontSize(10);
+        const fields = [["ID:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], ["CÉDULA:", item.cedula], ["EMPRESA:", item.empresa], ["ESTADO:", item.estado], ["INSPECTOR:", item.encargado], ["ALMACÉN:", item.almacenista]];
+        fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
+        if(item.foto) doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45);
+        doc.save(`ACTA_${item.id}.pdf`);
     }
 
     function actualizarUI() {
@@ -282,9 +281,9 @@
         });
     }
 
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v21', JSON.stringify(db)); actualizarUI(); } }
+    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v30', JSON.stringify(db)); actualizarUI(); } }
     function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
-    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Reporte"); XLSX.writeFile(wb, "Reporte_SCCAM_Total.xlsx"); }
+    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
     actualizarUI();
 </script>
 </body>
