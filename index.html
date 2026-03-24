@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Control Aduanero</title>
+    <title>S.C.C.A.M. Elite - Inteligencia de Datos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -12,67 +12,74 @@
             --danger: #ef4444; --warning: #facc15; --success: #10b981;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         
         .logo-container { text-align: center; margin-bottom: 10px; cursor: pointer; }
-        .logo-placeholder { width: 90px; height: 90px; border: 2px dashed var(--accent); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: #1e293b; }
+        .logo-placeholder { width: 85px; height: 85px; border: 2px dashed var(--accent); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: #1e293b; }
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 
         .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .header-app h1 { font-size: 1rem; color: var(--accent); margin: 0; text-transform: uppercase; }
+        .header-app h1 { font-size: 0.9rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; }
-        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; }
-        .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
-        .stat-badge { position: absolute; top: 5px; right: 5px; font-size: 0.5rem; background: #334155; padding: 2px 5px; border-radius: 4px; color: var(--accent); }
+        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0 0; font-size: 1.3rem; font-weight: 800; }
+        .stat-badge { position: absolute; top: 5px; right: 5px; font-size: 0.5rem; background: #0f172a; padding: 2px 6px; border-radius: 4px; color: var(--accent); border: 1px solid var(--accent); }
 
-        .tabs { display: flex; gap: 5px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; }
-        .tab.active { background: white; color: #0f172a; }
+        /* Alerta de detección */
+        #intelTag { display: none; background: #064e3b; color: #a7f3d0; padding: 5px 10px; border-radius: 5px; font-size: 0.7rem; margin-bottom: 10px; text-align: center; border: 1px solid var(--success); }
 
-        .main-card { background: white; color: #1e293b; padding: 18px; border-radius: 0 10px 10px 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .tabs { display: flex; gap: 4px; }
+        .tab { flex: 1; padding: 14px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.7rem; transition: 0.3s; }
+        .tab.active { background: white; color: #0f172a; box-shadow: 0 -4px 10px rgba(0,0,0,0.2); }
+
+        .main-card { background: white; color: #1e293b; padding: 20px; border-radius: 0 10px 10px 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media (min-width: 650px) { .form-grid { grid-template-columns: 1fr 1fr; } .full { grid-column: span 2; } }
+        @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } .full { grid-column: span 2; } }
 
-        label { display: block; font-weight: 700; font-size: 0.65rem; margin-bottom: 4px; color: #475569; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
+        label { display: block; font-weight: 800; font-size: 0.6rem; margin-bottom: 4px; color: #64748b; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; transition: 0.2s; }
+        input:focus { border-color: var(--accent); outline: none; background: #f8fafc; }
         
-        .camera-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 2px solid #e2e8f0; margin-top: 5px; }
+        .camera-box { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 2px solid #cbd5e1; margin-top: 10px; text-align: center; }
         .hidden { display: none; }
-        #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid #cbd5e1; }
+        #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid #94a3b8; background: black; }
 
-        .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
-        .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; }
-        .btn-save { background: #0f172a; color: white; }
+        .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .btn-save { background: #0f172a; color: white; box-shadow: 0 4px 12px rgba(15,23,42,0.3); }
         .btn-download { background: var(--success); color: white; display: none; }
-        .btn-cam-toggle { background: #6366f1; color: white; margin-bottom: 5px; }
+        .btn-cam-toggle { background: #4f46e5; color: white; }
 
-        .history-section { margin-top: 25px; background: var(--card); border-radius: 10px; padding: 12px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 1400px; }
-        th { text-align: left; padding: 12px; color: #94a3b8; font-size: 0.7rem; border-bottom: 1px solid #334155; text-transform: uppercase; }
-        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; }
-        .img-table { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+        .history-section { margin-top: 30px; background: var(--card); border-radius: 12px; padding: 15px; overflow-x: auto; border: 1px solid #334155; }
+        .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 12px; width: 100%; border-radius: 10px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+        th { text-align: left; padding: 12px; color: #64748b; font-size: 0.65rem; border-bottom: 2px solid #334155; }
+        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; color: #cbd5e1; }
+        .img-table { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid #475569; }
 
-        .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: white; margin-right: 4px; }
+        .action-btn { border: none; padding: 7px; border-radius: 6px; cursor: pointer; color: white; margin-right: 5px; font-size: 1rem; }
         .btn-del { background: var(--danger); }
-        .btn-pdf { background: #3b82f6; }
+        .btn-pdf { background: #2563eb; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="logo-container" onclick="document.getElementById('logoInput').click()">
-        <div class="logo-placeholder" id="logoDisplay"><span>LOGOTIPO</span></div>
+        <div class="logo-placeholder" id="logoDisplay"><span>SUBIR LOGO</span></div>
         <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
     </div>
 
-    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA AÉREA Y MARÍTIMA</h1></div>
+    <div class="header-app"><h1>SISTEMA DE CONTROL ADUANERO (S.C.C.A.M.)</h1></div>
 
     <div class="dashboard">
         <div class="stat-card"><span class="stat-badge" id="badgeModo">MAR</span><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
-        <div id="incidenciaCard" class="stat-card"><h4>INCIDENCIAS</h4><p id="cInc" style="color:var(--danger)">0</p></div>
+        <div class="stat-card"><h4>INCIDENCIAS</h4><p id="cInc" style="color:var(--danger)">0</p></div>
     </div>
+
+    <div id="intelTag">✨ Cliente detectado: Cédula y Empresa auto-rellenadas</div>
 
     <div class="tabs">
         <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
@@ -81,23 +88,21 @@
 
     <div class="main-card">
         <div class="form-grid">
-            <input type="hidden" id="editIndex" value="-1">
-            
-            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal"></div>
+            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="Ej: MSCU1234567"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
             
-            <div><label id="labelSeguridad">N° Precinto</label><input type="text" id="bultos"></div>
+            <div><label id="labelSeguridad">N° Precinto</label><input type="text" id="bultos" placeholder="Dato de seguridad"></div>
             
-            <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
-            <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
-            <div><label style="color:#d97706">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" list="listSeniat" style="background:#fffbeb"></div>
+            <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores" placeholder="Nombre del inspector"></div>
+            <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas" placeholder="Persona de almacén"></div>
+            <div><label style="color:#b45309">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" list="listSeniat" style="background:#fffbeb" placeholder="Nombre funcionario"></div>
             
-            <div><label>Nombre del Cliente</label><input type="text" id="cliente" list="listClientes" onchange="autoRellenarCliente(this.value)"></div>
-            <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
-            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" list="listEmpresas"></div>
+            <div><label>Nombre del Cliente</label><input type="text" id="cliente" list="listClientes" oninput="detectarDatos(this.value)" placeholder="Escriba o seleccione"></div>
+            <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente" placeholder="V-00.000.000"></div>
+            <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" list="listEmpresas" placeholder="Nombre de la compañía"></div>
 
-            <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
-            <div class="full"><label style="color:#be123c">⚠️ Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2"></textarea></div>
+            <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido" placeholder="Descripción de la mercancía"></div>
+            <div class="full"><label style="color:#be123c">⚠️ Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2" style="background:#fff1f2" placeholder="Describa irregularidades..."></textarea></div>
             
             <div>
                 <label>Condición Física</label>
@@ -111,21 +116,23 @@
             </div>
 
             <div class="full">
-                <button type="button" class="btn btn-cam-toggle" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 ¿DESEA INCLUIR FOTO?</button>
+                <button type="button" class="btn btn-cam-toggle" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR EVIDENCIA FOTOGRÁFICA</button>
                 <div id="seccionCamara" class="camera-box hidden">
-                    <button class="btn" style="background:#10b981; color:white; padding:10px;" onclick="initCamera()">CÁMARA</button>
+                    <button class="btn" style="background:#10b981; color:white; margin-bottom:10px;" onclick="initCamera()">ENCENDER CÁMARA</button>
                     <video id="video" autoplay playsinline class="hidden"></video>
-                    <button id="snap" class="btn hidden" style="background:var(--danger); color:white; margin-top:10px" onclick="takePhoto()">CAPTURAR</button>
+                    <button id="snap" class="btn hidden" style="background:var(--danger); color:white; margin-top:10px" onclick="takePhoto()">CAPTURAR AHORA</button>
                     <img id="photoPreview" class="hidden">
                     <canvas id="canvas" class="hidden"></canvas>
+                    <button class="btn" style="background:#64748b; color:white; margin-top:10px; padding:10px" onclick="cancelarFoto()">CANCELAR</button>
                 </div>
             </div>
-            <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
+            <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2" placeholder="Notas adicionales del reconocimiento..."></textarea></div>
         </div>
+
         <div class="actions">
-            <button id="btnGuardar" class="btn btn-save" onclick="registrar()">REGISTRAR DATOS</button>
-            <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA PDF</button>
-            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">EXCEL GENERAL</button>
+            <button id="btnGuardar" class="btn btn-save" onclick="registrar()">REGISTRAR Y GUARDAR</button>
+            <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ GENERAR ACTA PDF</button>
+            <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">REPORTE EXCEL (DATA COMPLETA)</button>
         </div>
     </div>
 
@@ -136,11 +143,11 @@
     <datalist id="listEmpresas"></datalist>
 
     <div class="history-section">
-        <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR EN HISTORIAL..."></div>
+        <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR CARGA, CLIENTE O EMPRESA..."></div>
         <table id="tablaDatos">
             <thead>
                 <tr>
-                    <th>TIPO</th><th>ID CARGA</th><th>FECHA</th><th>CLIENTE</th><th>CÉDULA</th><th>EMPRESA</th><th>ESTADO</th><th>INSPECTOR</th><th>SENIAT</th><th>ALMACÉN</th><th>FOTO</th><th>ACCIONES</th>
+                    <th>TIPO</th><th>ID CARGA</th><th>FECHA</th><th>CLIENTE</th><th>CÉDULA</th><th>EMPRESA</th><th>ESTADO</th><th>FOTO</th><th>ACCIONES</th>
                 </tr>
             </thead>
             <tbody id="cuerpoTabla"></tbody>
@@ -149,7 +156,7 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v51')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v52')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
@@ -163,11 +170,17 @@
         reader.readAsDataURL(e.target.files[0]);
     }
 
-    function autoRellenarCliente(nombre) {
-        const match = db.find(i => i.cliente === nombre);
+    // --- FUNCIÓN DE DETECCIÓN AUTOMÁTICA DE CÉDULA Y EMPRESA ---
+    function detectarDatos(nombre) {
+        const tag = document.getElementById('intelTag');
+        // Buscamos coincidencia exacta en la base de datos
+        const match = db.find(i => i.cliente.toLowerCase() === nombre.toLowerCase());
+        
         if(match) {
             document.getElementById('cedulaCliente').value = match.cedula;
             document.getElementById('empresaCliente').value = match.empresa;
+            tag.style.display = 'block';
+            setTimeout(() => tag.style.display = 'none', 3000);
         }
     }
 
@@ -188,19 +201,38 @@
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); document.getElementById('toggleCamBtn').classList.add('hidden'); }
     function cancelarFoto() { if(stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('seccionCamara').classList.add('hidden'); document.getElementById('toggleCamBtn').classList.remove('hidden'); document.getElementById('photoPreview').src = ''; document.getElementById('photoPreview').classList.add('hidden'); document.getElementById('video').classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
 
-    async function initCamera() { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); }
-    function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); const prev = document.getElementById('photoPreview'); prev.src = data; prev.classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
+    async function initCamera() { 
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
+            const v = document.getElementById('video'); 
+            v.srcObject = stream; 
+            v.classList.remove('hidden'); 
+            document.getElementById('snap').classList.remove('hidden'); 
+        } catch(err) { alert("Error al acceder a la cámara"); }
+    }
+
+    function takePhoto() { 
+        const c = document.getElementById('canvas'); 
+        const v = document.getElementById('video'); 
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight; 
+        c.getContext('2d').drawImage(v, 0, 0); 
+        const data = c.toDataURL('image/jpeg', 0.6); 
+        const prev = document.getElementById('photoPreview'); 
+        prev.src = data; 
+        prev.classList.remove('hidden'); 
+        if(stream) stream.getTracks().forEach(t => t.stop()); 
+        v.classList.add('hidden'); 
+        document.getElementById('snap').classList.add('hidden'); 
+    }
 
     function cambiarModo(m) {
         modoActual = m;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
         document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
-        
-        // CORRECCIÓN SOLICITADA: Etiquetas dinámicas
         document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
         document.getElementById('labelSeguridad').innerText = m === 'Marítimo' ? "N° Precinto" : "Bultos Reconocidos";
-        
         actualizarUI();
     }
 
@@ -222,13 +254,14 @@
             obs: document.getElementById('obs').value,
             foto: document.getElementById('photoPreview').src || ''
         };
-        if(!item.id || !item.cliente) return alert("Complete los campos.");
+        if(!item.id || !item.cliente) return alert("Complete los campos obligatorios (ID y Cliente).");
         db.push(item);
-        localStorage.setItem('sccam_final_v51', JSON.stringify(db));
+        localStorage.setItem('sccam_final_v52', JSON.stringify(db));
         currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
         actualizarUI();
         actualizarListas();
+        alert("¡Registro guardado exitosamente!");
     }
 
     function descargarActaManual() { if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); } }
@@ -237,25 +270,39 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 20, 20);
-        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
-        doc.line(15, 32, 195, 32);
-        let y = 40; doc.setFontSize(10);
+        doc.setFontSize(16); doc.setTextColor(15, 23, 42);
+        doc.text("ACTA DE RECONOCIMIENTO FÍSICO ADUANERO", 40, 25);
+        doc.setDrawColor(34, 211, 238); doc.setLineWidth(1); doc.line(15, 35, 195, 35);
         
-        // Etiqueta dinámica en el PDF también
+        let y = 45; doc.setFontSize(10); doc.setTextColor(0);
         const segEtiqueta = item.tipo === 'Marítimo' ? 'PRECINTO:' : 'BULTOS:';
         
         const fields = [
-            ["ID CARGA:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], 
-            ["RIF/CEDULA:", item.cedula], ["EMPRESA:", item.empresa], [segEtiqueta, item.bultos], ["ESTADO:", item.estado]
+            ["ID CARGA:", item.id], ["MODALIDAD:", item.tipo], ["CLIENTE:", item.cliente], 
+            ["RIF/CÉDULA:", item.cedula], ["EMPRESA:", item.empresa], [segEtiqueta, item.bultos], 
+            ["ESTADO FÍSICO:", item.estado], ["CONTENIDO:", item.contenido]
         ];
-        fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
-        if(item.foto) doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45);
         
-        const ySign = 260;
+        fields.forEach(f => { 
+            doc.setFont("helvetica", "bold"); doc.text(f[0], 15, y); 
+            doc.setFont("helvetica", "normal"); doc.text(String(f[1]), 55, y); 
+            y += 8; 
+        });
+
+        if(item.foto) {
+            doc.text("EVIDENCIA FOTOGRÁFICA:", 15, y + 5);
+            doc.addImage(item.foto, 'JPEG', 15, y + 10, 80, 60);
+            y += 75;
+        }
+        
+        // TRIPLE FIRMA
+        const ySign = 265;
+        doc.setFontSize(8);
         doc.line(15, ySign, 65, ySign); doc.text(`INSPECTOR: ${item.encargado}`, 15, ySign + 5);
         doc.line(75, ySign, 125, ySign); doc.text(`ALMACÉN: ${item.almacenista}`, 75, ySign + 5);
-        doc.line(135, ySign, 185, ySign); doc.text(`SENIAT: ${item.seniat || 'N/A'} (Opcional)`, 135, ySign + 5);
-        doc.save(`ACTA_${item.id}.pdf`);
+        doc.line(135, ySign, 185, ySign); doc.text(`SENIAT: ${item.seniat || 'N/A'} (OPCIONAL)`, 135, ySign + 5);
+        
+        doc.save(`ACTA_SCCAM_${item.id}.pdf`);
     }
 
     function actualizarUI() {
@@ -264,7 +311,6 @@
         cuerpo.innerHTML = '';
         const filtrados = db.filter(item => item.tipo === modoActual);
         document.getElementById('cTotal').innerText = filtrados.length;
-        document.getElementById('cInc').innerText = filtrados.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
 
         filtrados.slice().reverse().forEach((item) => {
             const index = db.indexOf(item);
@@ -272,8 +318,7 @@
                 cuerpo.innerHTML += `<tr>
                     <td><small>${item.tipo}</small></td><td><b>${item.id}</b></td><td><small>${item.fecha}</small></td>
                     <td>${item.cliente}</td><td>${item.cedula}</td><td>${item.empresa}</td>
-                    <td style="color:${item.estado === 'Excelente' || item.estado === 'Bueno' ? 'var(--success)' : 'var(--danger)'}">${item.estado}</td>
-                    <td>${item.encargado}</td><td>${item.seniat}</td><td>${item.almacenista}</td>
+                    <td style="color:${item.estado === 'Excelente' || item.estado === 'Bueno' ? '#10b981' : '#ef4444'}">${item.estado}</td>
                     <td>${item.foto ? `<img src="${item.foto}" class="img-table">` : 'N/A'}</td>
                     <td><button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])">📄</button><button class="action-btn btn-del" onclick="eliminar(${index})">🗑️</button></td>
                 </tr>`;
@@ -281,12 +326,6 @@
         });
     }
 
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v51', JSON.stringify(db)); actualizarUI(); actualizarListas(); } }
+    function eliminar(idx) { if(confirm("¿Eliminar registro?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v52', JSON.stringify(db)); actualizarUI(); actualizarListas(); } }
     function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
-    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
-    
-    actualizarListas();
-    actualizarUI();
-</script>
-</body>
-</html>
+    function exportarExcel() { const ws = XLSX.u
