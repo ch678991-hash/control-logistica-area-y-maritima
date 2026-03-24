@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Base de Datos Pro</title>
+    <title>S.C.C.A.M. Elite - Control Aduanero</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -53,6 +53,10 @@
         th { text-align: left; padding: 12px; color: #94a3b8; font-size: 0.7rem; border-bottom: 1px solid #334155; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; }
         .img-table { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
+
+        .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: white; margin-right: 4px; }
+        .btn-del { background: var(--danger); }
+        .btn-pdf { background: #3b82f6; }
     </style>
 </head>
 <body>
@@ -79,9 +83,10 @@
         <div class="form-grid">
             <input type="hidden" id="editIndex" value="-1">
             
-            <div><label>N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
+            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelBultos">Seguridad</label><input type="text" id="bultos"></div>
+            
+            <div><label id="labelSeguridad">N° Precinto</label><input type="text" id="bultos"></div>
             
             <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
@@ -144,7 +149,7 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v50')) || [];
+    let db = JSON.parse(localStorage.getItem('sccam_final_v51')) || [];
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
@@ -158,7 +163,6 @@
         reader.readAsDataURL(e.target.files[0]);
     }
 
-    // AUTO-RELLENO BASADO EN SELECCIÓN DE CLIENTE
     function autoRellenarCliente(nombre) {
         const match = db.find(i => i.cliente === nombre);
         if(match) {
@@ -167,7 +171,6 @@
         }
     }
 
-    // ACTUALIZAR LAS LISTAS DESPLEGABLES (DATA-LISTS)
     function actualizarListas() {
         const lists = {
             listInspectores: [...new Set(db.map(i => i.encargado))],
@@ -193,6 +196,11 @@
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
         document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
+        
+        // CORRECCIÓN SOLICITADA: Etiquetas dinámicas
+        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
+        document.getElementById('labelSeguridad').innerText = m === 'Marítimo' ? "N° Precinto" : "Bultos Reconocidos";
+        
         actualizarUI();
     }
 
@@ -216,7 +224,7 @@
         };
         if(!item.id || !item.cliente) return alert("Complete los campos.");
         db.push(item);
-        localStorage.setItem('sccam_final_v50', JSON.stringify(db));
+        localStorage.setItem('sccam_final_v51', JSON.stringify(db));
         currentPDFItem = item;
         document.getElementById('btnDescargar').style.display = 'block';
         actualizarUI();
@@ -232,7 +240,14 @@
         doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
         doc.line(15, 32, 195, 32);
         let y = 40; doc.setFontSize(10);
-        const fields = [["ID CARGA:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], ["RIF/CEDULA:", item.cedula], ["EMPRESA:", item.empresa], ["ESTADO:", item.estado]];
+        
+        // Etiqueta dinámica en el PDF también
+        const segEtiqueta = item.tipo === 'Marítimo' ? 'PRECINTO:' : 'BULTOS:';
+        
+        const fields = [
+            ["ID CARGA:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], 
+            ["RIF/CEDULA:", item.cedula], ["EMPRESA:", item.empresa], [segEtiqueta, item.bultos], ["ESTADO:", item.estado]
+        ];
         fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
         if(item.foto) doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45);
         
@@ -266,7 +281,7 @@
         });
     }
 
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v50', JSON.stringify(db)); actualizarUI(); actualizarListas(); } }
+    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v51', JSON.stringify(db)); actualizarUI(); actualizarListas(); } }
     function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
     function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
     
