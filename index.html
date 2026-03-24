@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. - Control de Carga Profesional</title>
+    <title>S.C.C.A.M. Elite - Reporte Profesional</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -226,21 +226,80 @@
 
     function descargarActaManual() { if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); } }
 
+    // --- FUNCIÓN PDF CORREGIDA Y CENTRALIZADA ---
     function generarPDF(item) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 20, 20);
-        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 40, 20);
-        doc.line(15, 32, 195, 32);
-        let y = 40; doc.setFontSize(10);
-        const segLab = item.tipo === 'Marítimo' ? 'PRECINTO:' : 'BULTOS:';
-        const fields = [ ["ID CARGA:", item.id], ["TIPO:", item.tipo], ["CLIENTE:", item.cliente], ["RIF/CEDULA:", item.cedula], ["EMPRESA:", item.empresa], [segLab, item.bultos], ["ESTADO:", item.estado] ];
-        fields.forEach(f => { doc.text(`${f[0]} ${f[1]}`, 15, y); y += 7; });
-        if(item.foto) doc.addImage(item.foto, 'JPEG', 15, y+5, 60, 45);
-        const ySign = 260;
-        doc.line(15, ySign, 65, ySign); doc.text(`INSPECTOR: ${item.encargado}`, 15, ySign + 5);
-        doc.line(75, ySign, 125, ySign); doc.text(`ALMACÉN: ${item.almacenista}`, 75, ySign + 5);
-        doc.line(135, ySign, 185, ySign); doc.text(`SENIAT: ${item.seniat || 'N/A'} (Opcional)`, 135, ySign + 5);
+        const pageWidth = doc.internal.pageSize.getWidth();
+        
+        // 1. Encabezado Centralizado
+        if(appLogo) doc.addImage(appLogo, 'PNG', (pageWidth/2) - 15, 10, 30, 30);
+        
+        doc.setFontSize(18);
+        doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pageWidth / 2, 50, { align: "center" });
+        
+        doc.setFontSize(10);
+        doc.text(`Modalidad: ${item.tipo.toUpperCase()} | Fecha: ${item.fecha}`, pageWidth / 2, 58, { align: "center" });
+        
+        doc.setDrawColor(200);
+        doc.line(20, 65, pageWidth - 20, 65);
+
+        // 2. Bloque de Datos Centralizado (Formato Tabla)
+        let y = 75;
+        doc.setFontSize(11);
+        const labels = [
+            ["ID CARGA:", item.id], ["CLIENTE:", item.cliente], 
+            ["CÉDULA/RIF:", item.cedula], ["EMPRESA:", item.empresa],
+            [item.tipo === 'Marítimo' ? "PRECINTO:" : "BULTOS:", item.bultos],
+            ["ESTADO:", item.estado], ["CONTENIDO:", item.contenido]
+        ];
+
+        labels.forEach(row => {
+            doc.setFont(undefined, 'bold');
+            doc.text(row[0], 30, y);
+            doc.setFont(undefined, 'normal');
+            doc.text(String(row[1]), 80, y);
+            y += 8;
+        });
+
+        // 3. Hallazgos y Foto (Si existen)
+        if(item.noDeclarado) {
+            y += 5;
+            doc.setTextColor(200, 0, 0);
+            doc.setFont(undefined, 'bold');
+            doc.text("HALLAZGOS NO DECLARADOS:", 30, y);
+            doc.setFont(undefined, 'normal');
+            doc.text(item.noDeclarado, 30, y + 6, { maxWidth: 150 });
+            doc.setTextColor(0);
+            y += 15;
+        }
+
+        if(item.foto) {
+            y += 5;
+            doc.text("EVIDENCIA FOTOGRÁFICA:", pageWidth / 2, y, { align: "center" });
+            doc.addImage(item.foto, 'JPEG', (pageWidth/2) - 40, y + 5, 80, 60);
+            y += 70;
+        }
+
+        // 4. Firmas Centralizadas y Equilibradas
+        const ySign = 265;
+        doc.setFontSize(9);
+        
+        // Firma Izquierda
+        doc.line(20, ySign, 70, ySign);
+        doc.text("INSPECTOR", 45, ySign + 5, { align: "center" });
+        doc.text(item.encargado, 45, ySign - 2, { align: "center" });
+
+        // Firma Centro
+        doc.line(80, ySign, 130, ySign);
+        doc.text("ALMACENISTA", 105, ySign + 5, { align: "center" });
+        doc.text(item.almacenista, 105, ySign - 2, { align: "center" });
+
+        // Firma Derecha
+        doc.line(140, ySign, 190, ySign);
+        doc.text("SENIAT (Opcional)", 165, ySign + 5, { align: "center" });
+        doc.text(item.seniat || "________", 165, ySign - 2, { align: "center" });
+
         doc.save(`ACTA_${item.id}.pdf`);
     }
 
