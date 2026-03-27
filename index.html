@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>S.I.C.A.M. Elite</title>
     
-    <!-- LIBRERÍAS (Supabase + Excel + PDF) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -93,11 +92,16 @@
             
             <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
-            <div><label>Nombre del Cliente / Consignatario</label><input type="text" id="cliente" list="listClientes"></div>
             
-            <!-- CAMPOS SEPARADOS -->
-            <div class="full"><label>Identificación (Cédula / RIF)</label><input type="text" id="cedulaCliente" placeholder="Ej: V-12.345.678 / J-12345678-0"></div>
-            <div class="full"><label>Nombre de la Empresa</label><input type="text" id="empresaCliente" placeholder="Nombre de la razón social"></div>
+            <div class="full">
+                <label>Nombre del Cliente / Consignatario</label>
+                <input type="text" id="cliente" list="listClientes" oninput="autocompletarCliente(this.value)" placeholder="Escriba para buscar...">
+            </div>
+            
+            <div><label>Identificación (Cédula / RIF)</label><input type="text" id="cedulaCliente" placeholder="Cédula"></div>
+            <div><label>Nombre de la Empresa</label><input type="text" id="empresaCliente" placeholder="Empresa"></div>
+
+            <div class="full"><label>Funcionario SENIAT Actuante</label><input type="text" id="seniat" list="listSeniat" placeholder="Nombre del funcionario"></div>
 
             <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
             <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
@@ -132,7 +136,11 @@
         </div>
     </div>
 
-    <datalist id="listInspectores"></datalist><datalist id="listAlmacenistas"></datalist><datalist id="listClientes"></datalist>
+    <!-- LISTAS DE AUTOCOMPLETADO -->
+    <datalist id="listInspectores"></datalist>
+    <datalist id="listAlmacenistas"></datalist>
+    <datalist id="listClientes"></datalist>
+    <datalist id="listSeniat"></datalist>
 
     <div class="history-section">
         <div class="search-box"><input style="width:100%; padding:12px; border-radius:10px; background:#0f172a; color:white; border:1px solid #334155;" type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR REGISTRO..."></div>
@@ -148,7 +156,6 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN SUPABASE
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -164,22 +171,37 @@
 
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
-        if (!error) { db = data; actualizarUI(); actualizarListas(); }
+        if (!error) { 
+            db = data; 
+            actualizarUI(); 
+            actualizarListas(); 
+        }
     }
 
-    function loadLogo(e) {
-        const reader = new FileReader();
-        reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
-        reader.readAsDataURL(e.target.files[0]);
+    // --- SISTEMA INTELIGENTE DE AUTOCOMPLETADO ---
+    function autocompletarCliente(nombre) {
+        if(!nombre) return;
+        // Busca el registro más reciente que coincida con ese nombre
+        const coincidencia = db.find(i => i.cliente && i.cliente.toLowerCase() === nombre.toLowerCase());
+        
+        if(coincidencia) {
+            document.getElementById('cedulaCliente').value = coincidencia.cedula || '';
+            document.getElementById('empresaCliente').value = coincidencia.empresa || '';
+        }
     }
 
-    function cambiarModo(m) {
-        modoActual = m;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
-        document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
-        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
-        actualizarUI();
+    function actualizarListas() {
+        const dataLists = {
+            listInspectores: [...new Set(db.map(i => i.encargado))],
+            listAlmacenistas: [...new Set(db.map(i => i.almacenista))],
+            listClientes: [...new Set(db.map(i => i.cliente))],
+            listSeniat: [...new Set(db.map(i => i.seniat_funcionario).filter(Boolean))] // Funcionario SENIAT
+        };
+        
+        for(let id in dataLists) {
+            const dl = document.getElementById(id);
+            if(dl) dl.innerHTML = dataLists[id].map(v => v ? `<option value="${v}">` : '').join('');
+        }
     }
 
     async function registrarEnLaNube() {
@@ -201,6 +223,7 @@
             cliente: cliVal,
             empresa: document.getElementById('empresaCliente').value,
             cedula: document.getElementById('cedulaCliente').value,
+            seniat_funcionario: document.getElementById('seniat').value, // Nuevo campo
             contenido: document.getElementById('contenido').value,
             no_declared: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
@@ -222,11 +245,11 @@
         btn.disabled = false;
     }
 
-    // --- FUNCIONES CÁMARA ---
+    // --- CÁMARA ---
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); document.getElementById('toggleCamBtn').classList.add('hidden'); }
     function cancelarFoto() { if(stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('seccionCamara').classList.add('hidden'); document.getElementById('toggleCamBtn').classList.remove('hidden'); document.getElementById('photoPreview').src = ''; document.getElementById('photoPreview').classList.add('hidden'); document.getElementById('video').classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
-    async function initCamera() { try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); } catch(e) { alert("Error acceso cámara"); } }
-    function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); const prev = document.getElementById('photoPreview'); prev.src = data; prev.classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
+    async function initCamera() { try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); } catch(e) { alert("Error cámara"); } }
+    function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); document.getElementById('photoPreview').src = data; document.getElementById('photoPreview').classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
 
     // --- UI ---
     function actualizarUI() {
@@ -252,20 +275,23 @@
     }
 
     async function eliminarRegistro(id_db) {
-        if(confirm("¿Eliminar de la nube permanentemente?")) {
+        if(confirm("¿Eliminar permanentemente?")) {
             await _supabase.from('registros_carga').delete().eq('id', id_db);
             await cargarDatosDeNube();
         }
     }
 
-    function actualizarListas() {
-        const lists = { listInspectores: [...new Set(db.map(i => i.encargado))], listAlmacenistas: [...new Set(db.map(i => i.almacenista))], listClientes: [...new Set(db.map(i => i.cliente))] };
-        for(let id in lists) { const dl = document.getElementById(id); if(dl) dl.innerHTML = lists[id].map(v => v ? `<option value="${v}">` : '').join(''); }
+    function cambiarModo(m) {
+        modoActual = m;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
+        document.getElementById('badgeModo').innerText = m === 'Marítimo' ? "MAR" : "AIRE";
+        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
+        actualizarUI();
     }
 
-    // --- REPORTES ---
     function prepararPDFCloud(item) {
-        const itemPDF = { id: item.id_carga, tipo: item.tipo, fecha: item.fecha, bultos: item.bultos, encargado: item.encargado, almacenista: item.almacenista, cliente: item.cliente, empresa: item.empresa, cedula: item.cedula, contenido: item.contenido, noDeclarado: item.no_declared, estado: item.estado, foto: item.foto };
+        const itemPDF = { ...item, id: item.id_carga, seniat: item.seniat_funcionario || 'N/A' };
         generarPDF(itemPDF);
     }
 
@@ -273,26 +299,24 @@
         const { jsPDF } = window.jspdf; const doc = new jsPDF(); const pw = doc.internal.pageSize.getWidth();
         if(appLogo) doc.addImage(appLogo, 'PNG', (pw/2)-15, 10, 30, 30);
         doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw/2, 50, { align: "center" });
-        doc.setFontSize(10); doc.text(`Modalidad: ${item.tipo.toUpperCase()} | Fecha: ${item.fecha}`, pw/2, 58, { align: "center" });
+        doc.setFontSize(10); doc.text(`S.I.C.A.M. | Modalidad: ${item.tipo.toUpperCase()} | Fecha: ${item.fecha}`, pw/2, 58, { align: "center" });
         doc.line(20, 65, pw-20, 65); let y = 75; doc.setFontSize(11);
         const labels = [
-            ["ID CARGA:", item.id], 
-            ["CLIENTE:", item.cliente], 
-            ["IDENTIFICACIÓN:", item.cedula || 'N/A'],
-            ["EMPRESA:", item.empresa || 'N/A'],
-            ["ESTADO:", item.estado], 
-            ["CONTENIDO:", item.contenido]
+            ["ID CARGA:", item.id], ["CLIENTE:", item.cliente], ["CÉDULA/RIF:", item.cedula || 'N/A'],
+            ["EMPRESA:", item.empresa || 'N/A'], ["FUNC. SENIAT:", item.seniat_funcionario || 'N/A'],
+            ["ESTADO:", item.estado], ["CONTENIDO:", item.contenido]
         ];
         labels.forEach(r => { doc.setFont(undefined, 'bold'); doc.text(r[0], 30, y); doc.setFont(undefined, 'normal'); doc.text(String(r[1]), 80, y); y += 8; });
-        if(item.foto) { doc.addImage(item.foto, 'JPEG', (pw/2)-40, y+5, 80, 60); y += 75; }
+        if(item.foto) { try { doc.addImage(item.foto, 'JPEG', (pw/2)-40, y+5, 80, 60); } catch(e){} y += 75; }
         doc.line(20, 275, 70, 275); doc.text("INSPECTOR", 45, 280, {align: "center"});
         doc.line(pw-70, 275, pw-20, 275); doc.text("ALMACENISTA", pw-45, 280, {align: "center"});
         doc.save(`ACTA_${item.id}.pdf`);
     }
 
     function descargarActaManual() { if(currentPDFItem) { prepararPDFCloud(currentPDFItem); document.getElementById('btnDescargar').style.display='none'; limpiarForm(); } }
-    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'cliente', 'empresaCliente', 'cedulaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
+    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'cliente', 'empresaCliente', 'cedulaCliente', 'seniat', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
     function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, id, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Datos"); XLSX.writeFile(wb, "Reporte_SICAM.xlsx"); }
+    function loadLogo(e) { const reader = new FileReader(); reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; reader.readAsDataURL(e.target.files[0]); }
 </script>
 </body>
 </html>
