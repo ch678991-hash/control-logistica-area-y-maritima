@@ -25,7 +25,7 @@
         .header-app h1 { font-size: 0.9rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; }
         .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; }
         .stat-card p { margin: 5px 0 0; font-size: 1.3rem; font-weight: 800; }
 
@@ -49,16 +49,21 @@
         .btn-save { background: #0f172a; color: white; }
         .btn-update { background: var(--warning); color: #0f172a; display: none; }
 
-        .history-section { background: var(--card); border-radius: 10px; padding: 15px; margin-top: 20px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 1000px; color: var(--text); }
-        th { text-align: left; padding: 12px; color: var(--accent); font-size: 0.7rem; border-bottom: 2px solid #334155; }
-        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; }
+        /* SECCIÓN DE BÚSQUEDA Y TABLA */
+        .history-section { background: var(--card); border-radius: 10px; padding: 15px; margin-top: 20px; }
+        .search-container { margin-bottom: 15px; }
+        .search-container input { background: #0f172a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; }
+
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1300px; color: var(--text); }
+        th { text-align: left; padding: 12px; color: var(--accent); font-size: 0.65rem; border-bottom: 2px solid #334155; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; white-space: nowrap; }
         
         .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; margin-right: 4px; }
         .btn-edit { background: var(--warning); }
         .btn-del { background: var(--danger); color: white; }
         .btn-pdf { background: #3b82f6; color: white; }
-        .img-table { width: 45px; height: 45px; border-radius: 4px; object-fit: cover; }
+        .img-table { width: 45px; height: 45px; border-radius: 4px; object-fit: cover; background: #334155; }
     </style>
 </head>
 <body>
@@ -127,16 +132,31 @@
         </div>
     </div>
 
+    <!-- SECCIÓN DE ABAJO ACTUALIZADA CON BUSCADOR -->
     <div class="history-section">
-        <h3 style="color:var(--accent); font-size: 0.8rem;">HISTORIAL DE REGISTROS</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>ACCIONES</th><th>ID CARGA</th><th>CLIENTE</th><th>EMPRESA</th><th>FECHA</th><th>ESTADO</th><th>FOTO</th>
-                </tr>
-            </thead>
-            <tbody id="cuerpoTabla"></tbody>
-        </table>
+        <div class="search-container">
+            <input type="text" id="globalSearch" placeholder="🔍 BUSCAR POR ID, CLIENTE, EMPRESA O SENIAT..." onkeyup="actualizarUI()">
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ACCIONES</th>
+                        <th>ID CARGA</th>
+                        <th>CLIENTE</th>
+                        <th>EMPRESA</th>
+                        <th>CÉDULA/RIF</th>
+                        <th>FECHA</th>
+                        <th>SENIAT</th>
+                        <th>PRECINTO</th>
+                        <th>INSPECTOR</th>
+                        <th>ESTADO</th>
+                        <th>FOTO</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTabla"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -160,7 +180,6 @@
         if (!error) { db = data; actualizarUI(); actualizarListas(); }
     }
 
-    // AUTOCOMPLETADO INTELIGENTE
     function autocompletarCliente(valor) {
         const r = db.find(i => i.cliente && i.cliente.toLowerCase() === valor.trim().toLowerCase());
         if (r) {
@@ -194,7 +213,7 @@
             no_declared: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
             observaciones: document.getElementById('obs').value,
-            foto: document.getElementById('photoPreview').src.startsWith('data') ? document.getElementById('photoPreview').src : ''
+            foto: document.getElementById('photoPreview').src.startsWith('data') ? document.getElementById('photoPreview').src : (document.getElementById('photoPreview').src.startsWith('http') ? document.getElementById('photoPreview').src : '')
         };
     }
 
@@ -203,7 +222,7 @@
         if(!item.id_carga || !item.cliente) return alert("Complete ID y Cliente");
         const { error } = await _supabase.from('registros_carga').insert([item]);
         if (error) alert("Error: " + error.message);
-        else { alert("✅ Registro Guardado"); limpiarForm(); cargarDatosDeNube(); }
+        else { alert("✅ Guardado"); limpiarForm(); cargarDatosDeNube(); }
     }
 
     function editarRegistro(id) {
@@ -223,8 +242,10 @@
         document.getElementById('noDeclarada').value = r.no_declared;
         document.getElementById('estado').value = r.estado;
         document.getElementById('obs').value = r.observaciones;
-        if(r.foto) { document.getElementById('photoPreview').src = r.foto; document.getElementById('photoPreview').classList.remove('hidden'); }
-        
+        if(r.foto) { 
+            document.getElementById('photoPreview').src = r.foto; 
+            document.getElementById('photoPreview').classList.remove('hidden'); 
+        }
         document.getElementById('btnGuardar').style.display = 'none';
         document.getElementById('btnUpdate').style.display = 'block';
         window.scrollTo({top: 0, behavior: 'smooth'});
@@ -235,14 +256,26 @@
         const item = obtenerDatosForm();
         const { error } = await _supabase.from('registros_carga').update(item).eq('id', id_db);
         if (error) alert("Error: " + error.message);
-        else { alert("✅ Cambios Guardados"); limpiarForm(); cargarDatosDeNube(); }
+        else { alert("✅ Actualizado"); limpiarForm(); cargarDatosDeNube(); }
     }
 
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
+        const search = document.getElementById('globalSearch').value.toLowerCase();
         cuerpo.innerHTML = '';
-        const filtrados = db.filter(i => i.tipo === modoActual);
+        
+        const filtrados = db.filter(r => {
+            const matchesModo = r.tipo === modoActual;
+            const matchesSearch = !search || 
+                (r.id_carga && r.id_carga.toLowerCase().includes(search)) ||
+                (r.cliente && r.cliente.toLowerCase().includes(search)) ||
+                (r.empresa && r.empresa.toLowerCase().includes(search)) ||
+                (r.funcionario_seniat && r.funcionario_seniat.toLowerCase().includes(search));
+            return matchesModo && matchesSearch;
+        });
+
         document.getElementById('cTotal').innerText = filtrados.length;
+
         filtrados.forEach(r => {
             cuerpo.innerHTML += `<tr>
                 <td>
@@ -253,7 +286,11 @@
                 <td><b>${r.id_carga}</b></td>
                 <td>${r.cliente}</td>
                 <td>${r.empresa || '-'}</td>
+                <td>${r.cedula || '-'}</td>
                 <td><small>${r.fecha}</small></td>
+                <td>${r.funcionario_seniat || '-'}</td>
+                <td>${r.bultos || '-'}</td>
+                <td>${r.encargado || '-'}</td>
                 <td>${r.estado}</td>
                 <td>${r.foto ? `<img src="${r.foto}" class="img-table">` : 'N/A'}</td>
             </tr>`;
@@ -261,10 +298,7 @@
     }
 
     async function eliminarRegistro(id) {
-        if(confirm("¿Eliminar este registro de la nube?")) { 
-            await _supabase.from('registros_carga').delete().eq('id', id); 
-            cargarDatosDeNube(); 
-        }
+        if(confirm("¿Eliminar?")) { await _supabase.from('registros_carga').delete().eq('id', id); cargarDatosDeNube(); }
     }
 
     function limpiarForm() {
@@ -276,7 +310,7 @@
         document.getElementById('btnUpdate').style.display = 'none';
     }
 
-    // Lógica de Cámara
+    // Funciones de Cámara
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.toggle('hidden'); }
     async function initCamera() { 
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
@@ -307,7 +341,7 @@
         const lists = { 
             listInspectores: [...new Set(db.map(i => i.encargado))], 
             listAlmacenistas: [...new Set(db.map(i => i.almacenista))], 
-            listClientes: [...new Set(db.map(i => i.cliente))], 
+            listClientes: [...new Set(db.map(i => i.cliente))],
             listSeniat: [...new Set(db.map(i => i.funcionario_seniat))] 
         };
         for(let id in lists) { 
@@ -323,10 +357,4 @@
         doc.setFontSize(9); doc.text(`MODALIDAD: ${item.tipo.toUpperCase()} | CONTROL: ${item.id_carga}`, 50, 26);
         let y = 50; doc.setFontSize(10);
         const data = [["CLIENTE", item.cliente], ["EMPRESA", item.empresa], ["RIF/ID", item.cedula], ["SENIAT", item.funcionario_seniat], ["ESTADO", item.estado]];
-        data.forEach(r => { y+=8; doc.setFont("helvetica", "bold"); doc.text(r[0]+":", 20, y); doc.setFont("helvetica", "normal"); doc.text(String(r[1] || 'N/A'), 60, y); });
-        if(item.foto) doc.addImage(item.foto, 'JPEG', 60, y+10, 80, 60);
-        doc.save(`ACTA_${item.id_carga}.pdf`);
-    }
-</script>
-</body>
-</html>
+        data.forEach(r => { y+=8; doc.setFont("helvetica", 
