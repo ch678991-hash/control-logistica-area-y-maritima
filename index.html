@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite</title>
+    <title>S.I.C.A.M. Elite</title>
     
     <!-- LIBRERÍAS (Supabase + Excel + PDF) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -23,7 +23,7 @@
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 
         .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .header-app h1 { font-size: 1.1rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 2px; font-weight: 900; }
+        .header-app h1 { font-size: 1rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; line-height: 1.2; }
 
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; }
@@ -71,7 +71,9 @@
         <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
     </div>
 
-    <div class="header-app"><h1>S.C.C.A.M. ELITE</h1></div>
+    <div class="header-app">
+        <h1>SISTEMA DE CONTROL DE CARGA AÉREA Y MARÍTIMA (S.I.C.A.M.)</h1>
+    </div>
 
     <div class="dashboard">
         <div class="stat-card"><span class="stat-badge" id="badgeModo">MAR</span><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
@@ -87,7 +89,7 @@
         <div class="form-grid">
             <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="ID Carga"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelSeguridad">N° Precinto</label><input type="text" id="bultos" placeholder="Seguridad"></div>
+            <div><label id="labelSeguridad">N° Precinto / Seguridad</label><input type="text" id="bultos" placeholder="N° Precinto"></div>
             
             <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
@@ -95,7 +97,7 @@
             
             <!-- CAMPOS SEPARADOS -->
             <div class="full"><label>Identificación (Cédula / RIF)</label><input type="text" id="cedulaCliente" placeholder="Ej: V-12.345.678 / J-12345678-0"></div>
-            <div class="full"><label>Nombre de la Empresa</label><input type="text" id="empresaCliente" placeholder="Nombre jurídico de la empresa"></div>
+            <div class="full"><label>Nombre de la Empresa</label><input type="text" id="empresaCliente" placeholder="Nombre de la razón social"></div>
 
             <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
             <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
@@ -124,7 +126,7 @@
             <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
         </div>
         <div class="actions">
-            <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 REGISTRAR DATOS</button>
+            <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 REGISTRAR EN LA NUBE</button>
             <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA PDF</button>
             <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">REPORTE EXCEL GENERAL</button>
         </div>
@@ -133,7 +135,7 @@
     <datalist id="listInspectores"></datalist><datalist id="listAlmacenistas"></datalist><datalist id="listClientes"></datalist>
 
     <div class="history-section">
-        <div class="search-box"><input style="width:100%; padding:10px; border-radius:8px; border:none;" type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR REGISTRO..."></div>
+        <div class="search-box"><input style="width:100%; padding:12px; border-radius:10px; background:#0f172a; color:white; border:1px solid #334155;" type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR REGISTRO..."></div>
         <table id="tablaDatos">
             <thead>
                 <tr>
@@ -146,6 +148,7 @@
 </div>
 
 <script>
+    // CONFIGURACIÓN SUPABASE
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -197,7 +200,7 @@
             almacenista: document.getElementById('almacenista').value,
             cliente: cliVal,
             empresa: document.getElementById('empresaCliente').value,
-            cedula: document.getElementById('cedulaCliente').value, // Nuevo campo
+            cedula: document.getElementById('cedulaCliente').value,
             contenido: document.getElementById('contenido').value,
             no_declared: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
@@ -215,15 +218,17 @@
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
         }
-        btn.innerText = "🚀 REGISTRAR DATOS";
+        btn.innerText = "🚀 REGISTRAR EN LA NUBE";
         btn.disabled = false;
     }
 
+    // --- FUNCIONES CÁMARA ---
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); document.getElementById('toggleCamBtn').classList.add('hidden'); }
     function cancelarFoto() { if(stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('seccionCamara').classList.add('hidden'); document.getElementById('toggleCamBtn').classList.remove('hidden'); document.getElementById('photoPreview').src = ''; document.getElementById('photoPreview').classList.add('hidden'); document.getElementById('video').classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
     async function initCamera() { try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); } catch(e) { alert("Error acceso cámara"); } }
     function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); const prev = document.getElementById('photoPreview'); prev.src = data; prev.classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
 
+    // --- UI ---
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
         const filtro = document.getElementById('buscador').value.toLowerCase();
@@ -247,7 +252,7 @@
     }
 
     async function eliminarRegistro(id_db) {
-        if(confirm("¿Eliminar de la nube?")) {
+        if(confirm("¿Eliminar de la nube permanentemente?")) {
             await _supabase.from('registros_carga').delete().eq('id', id_db);
             await cargarDatosDeNube();
         }
@@ -258,6 +263,7 @@
         for(let id in lists) { const dl = document.getElementById(id); if(dl) dl.innerHTML = lists[id].map(v => v ? `<option value="${v}">` : '').join(''); }
     }
 
+    // --- REPORTES ---
     function prepararPDFCloud(item) {
         const itemPDF = { id: item.id_carga, tipo: item.tipo, fecha: item.fecha, bultos: item.bultos, encargado: item.encargado, almacenista: item.almacenista, cliente: item.cliente, empresa: item.empresa, cedula: item.cedula, contenido: item.contenido, noDeclarado: item.no_declared, estado: item.estado, foto: item.foto };
         generarPDF(itemPDF);
@@ -279,14 +285,14 @@
         ];
         labels.forEach(r => { doc.setFont(undefined, 'bold'); doc.text(r[0], 30, y); doc.setFont(undefined, 'normal'); doc.text(String(r[1]), 80, y); y += 8; });
         if(item.foto) { doc.addImage(item.foto, 'JPEG', (pw/2)-40, y+5, 80, 60); y += 75; }
-        doc.line(20, 270, 70, 270); doc.text("INSPECTOR", 45, 275, {align: "center"});
-        doc.line(pw-70, 270, pw-20, 270); doc.text("ALMACENISTA", pw-45, 275, {align: "center"});
+        doc.line(20, 275, 70, 275); doc.text("INSPECTOR", 45, 280, {align: "center"});
+        doc.line(pw-70, 275, pw-20, 275); doc.text("ALMACENISTA", pw-45, 280, {align: "center"});
         doc.save(`ACTA_${item.id}.pdf`);
     }
 
     function descargarActaManual() { if(currentPDFItem) { prepararPDFCloud(currentPDFItem); document.getElementById('btnDescargar').style.display='none'; limpiarForm(); } }
     function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'cliente', 'empresaCliente', 'cedulaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
-    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, id, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Datos"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
+    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, id, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Datos"); XLSX.writeFile(wb, "Reporte_SICAM.xlsx"); }
 </script>
 </body>
 </html>
