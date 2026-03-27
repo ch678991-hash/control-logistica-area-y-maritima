@@ -3,360 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Cloud Edition</title>
-    
+    <title>S.C.C.A.M. Elite</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
     <style>
-        :root {
-            --bg: #0f172a; --card: #1e293b; --accent: #22d3ee; --text: #f1f5f9;
-            --danger: #ef4444; --warning: #facc15; --success: #10b981;
-        }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
-        
-        .logo-container { text-align: center; margin-bottom: 10px; }
-        .logo-placeholder { width: 80px; height: 80px; border: 2px dashed var(--accent); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: #1e293b; cursor: pointer; }
-        .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
-
-        .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .header-app h1 { font-size: 0.9rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-
-        .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; }
-        .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; }
-        .stat-card p { margin: 5px 0 0; font-size: 1.3rem; font-weight: 800; }
-
-        .tabs { display: flex; gap: 5px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.7rem; }
-        .tab.active { background: white; color: #0f172a; }
-
-        .main-card { background: white; color: #1e293b; padding: 18px; border-radius: 0 10px 10px 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .form-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } .full { grid-column: span 2; } }
-
-        label { display: block; font-weight: 700; font-size: 0.6rem; margin-bottom: 3px; color: #475569; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
-        
-        .camera-box { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 2px solid #cbd5e1; margin-top: 5px; text-align: center; }
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #22d3ee; --text: #f1f5f9; --danger: #ef4444; --warning: #facc15; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        .main-card { background: white; color: #1e293b; padding: 15px; border-radius: 10px; margin-top: 10px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .full { grid-column: span 2; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; }
+        label { font-size: 0.7rem; font-weight: bold; color: #475569; display: block; margin-bottom: 2px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-save { background: var(--bg); color: white; }
+        .btn-upd { background: var(--warning); display: none; }
+        .history { background: var(--card); margin-top: 20px; padding: 10px; border-radius: 10px; }
+        #globalSearch { width: 100%; padding: 12px; background: #0f172a; color: white; border: 1px solid var(--accent); margin-bottom: 10px; border-radius: 8px; }
+        .wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 0.8rem; }
+        th { color: var(--accent); border-bottom: 2px solid #334155; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #334155; }
+        .img-table { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+        .action-btn { padding: 5px; border-radius: 4px; border: none; cursor: pointer; margin-right: 2px; }
         .hidden { display: none; }
-        #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid #94a3b8; max-width: 300px; }
-
-        .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; transition: 0.3s; }
-        .btn-save { background: #0f172a; color: white; }
-        .btn-update { background: var(--warning); color: #0f172a; display: none; }
-
-        /* SECCIÓN DE ABAJO ACTUALIZADA */
-        .history-section { background: var(--card); border-radius: 10px; padding: 15px; margin-top: 20px; }
-        .search-container { margin-bottom: 15px; }
-        .search-container input { background: #0f172a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; font-size: 0.9rem; }
-
-        .table-wrapper { overflow-x: auto; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1400px; color: var(--text); }
-        th { text-align: left; padding: 12px; color: var(--accent); font-size: 0.65rem; border-bottom: 2px solid #334155; background: #1e293b; position: sticky; top: 0; }
-        td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; white-space: nowrap; }
-        
-        .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; margin-right: 4px; }
-        .btn-edit { background: var(--warning); }
-        .btn-del { background: var(--danger); color: white; }
-        .btn-pdf { background: #3b82f6; color: white; }
-        .img-table { width: 45px; height: 45px; border-radius: 4px; object-fit: cover; background: #334155; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="logo-container" onclick="document.getElementById('logoInput').click()">
-        <div class="logo-placeholder" id="logoDisplay"><span>LOGO</span></div>
-        <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
+    <div style="text-align: center;">
+        <div id="logoDisplay" onclick="document.getElementById('logoInput').click()" style="width:70px;height:70px;border:2px dashed var(--accent);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;background:#1e293b;cursor:pointer;">LOGO</div>
+        <input type="file" id="logoInput" class="hidden" onchange="loadLogo(event)">
+        <h2 style="font-size: 0.9rem; color: var(--accent);">SISTEMA DE CONTROL DE CARGA</h2>
     </div>
 
-    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA AÉREA Y MARÍTIMA</h1></div>
-
-    <div class="dashboard">
-        <div class="stat-card"><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
-        <div class="stat-card"><h4>MODO ACTUAL</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
-    </div>
-
-    <div class="tabs">
-        <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
-        <button id="tabA" class="tab" onclick="cambiarModo('Aéreo')">✈️ AÉREO</button>
+    <div style="display: flex; gap: 5px;">
+        <button id="tabM" style="flex:1;padding:10px;" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
+        <button id="tabA" style="flex:1;padding:10px;" onclick="cambiarModo('Aéreo')">✈️ AÉREO</button>
     </div>
 
     <div class="main-card">
         <input type="hidden" id="editId">
         <div class="form-grid">
-            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal"></div>
-            <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelSeguridad">N° Precinto</label><input type="text" id="bultos"></div>
-            
-            <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
-            <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
-            <div><label>Funcionario SENIAT</label><input type="text" id="funcionarioSeniat" list="listSeniat"></div>
-
-            <div class="full"><label>Nombre del Cliente</label><input type="text" id="cliente" list="listClientes" oninput="autocompletarCliente(this.value)"></div>
-            
+            <div><label id="labelId">ID Carga</label><input type="text" id="idPrincipal"></div>
+            <div><label>Fecha</label><input type="datetime-local" id="fechaHora"></div>
+            <div><label>Precinto</label><input type="text" id="bultos"></div>
+            <div><label>Inspector</label><input type="text" id="encargado"></div>
+            <div><label>SENIAT</label><input type="text" id="funcionarioSeniat"></div>
+            <div class="full"><label>Cliente</label><input type="text" id="cliente" oninput="autocompletar(this.value)"></div>
             <div><label>Empresa</label><input type="text" id="empresaCliente"></div>
-            <div><label>Cédula / RIF</label><input type="text" id="cedulaCliente"></div>
-
-            <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
-            <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
-            
-            <div><label>Condición Física</label>
-                <select id="estado">
-                    <option value="Excelente">Excelente ✅</option>
-                    <option value="Bueno">Bueno</option>
-                    <option value="Dañado">Dañado ⚠️</option>
-                    <option value="Sello Violado">Sello Violado 🚫</option>
-                </select>
-            </div>
-
-            <div class="full">
-                <button type="button" class="btn btn-cam-toggle" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 FOTO DE EVIDENCIA</button>
-                <div id="seccionCamara" class="camera-box hidden">
-                    <button class="btn" style="background:#10b981; color:white; margin-bottom:10px;" onclick="initCamera()">ENCENDER CÁMARA</button>
-                    <video id="video" autoplay playsinline class="hidden" style="width:100%; max-width:300px;"></video>
-                    <button id="snap" class="btn hidden" style="background:var(--danger); color:white;" onclick="takePhoto()">CAPTURAR</button>
-                    <img id="photoPreview" class="hidden" style="width:100%; max-width:300px; margin-top:10px;">
-                    <canvas id="canvas" class="hidden"></canvas>
-                </div>
-            </div>
-            <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
+            <div><label>Cédula/RIF</label><input type="text" id="cedulaCliente"></div>
+            <div class="full"><label>Contenido</label><input type="text" id="contenido"></div>
+            <div class="full"><label>Hallazgos</label><textarea id="noDeclarada"></textarea></div>
+            <div class="full"><button class="btn" style="background:#6366f1;color:white;" onclick="initCam()">📸 TOMAR FOTO</button></div>
+            <video id="video" class="hidden" autoplay playsinline style="width:100%;max-width:200px;"></video>
+            <canvas id="canvas" class="hidden"></canvas>
+            <img id="photoPreview" class="hidden" style="width:100%;max-width:200px;">
         </div>
-        <div class="actions">
-            <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 REGISTRAR EN LA NUBE</button>
-            <button id="btnUpdate" class="btn btn-update" onclick="actualizarEnLaNube()">💾 GUARDAR CAMBIOS</button>
-        </div>
+        <button id="btnSave" class="btn btn-save" onclick="guardar()">🚀 REGISTRAR</button>
+        <button id="btnUpd" class="btn btn-upd" onclick="guardar()">💾 ACTUALIZAR</button>
     </div>
 
-    <!-- TABLA DE GESTIÓN CON BUSCADOR -->
-    <div class="history-section">
-        <div class="search-container">
-            <input type="text" id="globalSearch" placeholder="🔍 BUSCAR POR CUALQUIER DATO (ID, CLIENTE, EMPRESA, SENIAT...)" onkeyup="actualizarUI()">
-        </div>
-        <div class="table-wrapper">
+    <div class="history">
+        <input type="text" id="globalSearch" placeholder="🔍 BUSCAR EN REGISTROS..." onkeyup="render()">
+        <div class="wrapper">
             <table>
                 <thead>
-                    <tr>
-                        <th>ACCIONES</th>
-                        <th>ID CARGA</th>
-                        <th>CLIENTE</th>
-                        <th>EMPRESA</th>
-                        <th>CÉDULA/RIF</th>
-                        <th>FECHA</th>
-                        <th>SENIAT</th>
-                        <th>INSPECTOR</th>
-                        <th>PRECINTO</th>
-                        <th>ESTADO</th>
-                        <th>FOTO</th>
-                    </tr>
+                    <tr><th>ACCIONES</th><th>ID</th><th>CLIENTE</th><th>EMPRESA</th><th>FECHA</th><th>SENIAT</th><th>ESTADO</th><th>FOTO</th></tr>
                 </thead>
-                <tbody id="cuerpoTabla"></tbody>
+                <tbody id="tablaBody"></tbody>
             </table>
         </div>
     </div>
-</div>
-
-<datalist id="listInspectores"></datalist><datalist id="listAlmacenistas"></datalist><datalist id="listClientes"></datalist><datalist id="listSeniat"></datalist>
 
 <script>
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
-    const _supabase = supabase.createClient(SB_URL, SB_KEY);
+    const _sb = supabase.createClient(SB_URL, SB_KEY);
+    let db = [], modo = 'Marítimo', imgData = "", stream;
 
-    let db = []; 
-    let appLogo = localStorage.getItem('srca_logo') || '';
-    let modoActual = 'Marítimo';
-    let stream;
-
-    if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
-    document.addEventListener('DOMContentLoaded', cargarDatosDeNube);
-
-    async function cargarDatosDeNube() {
-        const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
-        if (!error) { db = data; actualizarUI(); actualizarListas(); }
+    async function load() {
+        const { data } = await _sb.from('registros_carga').select('*').order('created_at', { ascending: false });
+        db = data || []; render();
     }
 
-    function autocompletarCliente(valor) {
-        const r = db.find(i => i.cliente && i.cliente.toLowerCase() === valor.trim().toLowerCase());
-        if (r) {
-            document.getElementById('empresaCliente').value = r.empresa || '';
-            document.getElementById('cedulaCliente').value = r.cedula || '';
-        }
-    }
-
-    function cambiarModo(m) {
-        modoActual = m;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(m === 'Marítimo' ? 'tabM' : 'tabA').classList.add('active');
-        document.getElementById('txtModo').innerText = m.toUpperCase();
-        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
-        actualizarUI();
-    }
-
-    function obtenerDatosForm() {
-        return {
-            id_carga: document.getElementById('idPrincipal').value,
-            tipo: modoActual,
-            fecha: document.getElementById('fechaHora').value.replace('T', ' '),
-            bultos: document.getElementById('bultos').value,
-            encargado: document.getElementById('encargado').value,
-            almacenista: document.getElementById('almacenista').value,
-            funcionario_seniat: document.getElementById('funcionarioSeniat').value,
-            cliente: document.getElementById('cliente').value,
-            empresa: document.getElementById('empresaCliente').value,
-            cedula: document.getElementById('cedulaCliente').value,
-            contenido: document.getElementById('contenido').value,
-            no_declared: document.getElementById('noDeclarada').value,
-            estado: document.getElementById('estado').value,
-            observaciones: document.getElementById('obs').value,
-            foto: document.getElementById('photoPreview').src.startsWith('data') ? document.getElementById('photoPreview').src : (document.getElementById('photoPreview').src.startsWith('http') ? document.getElementById('photoPreview').src : '')
-        };
-    }
-
-    async function registrarEnLaNube() {
-        const item = obtenerDatosForm();
-        if(!item.id_carga || !item.cliente) return alert("Faltan datos obligatorios");
-        const { error } = await _supabase.from('registros_carga').insert([item]);
-        if (error) alert("Error: " + error.message);
-        else { alert("✅ Registro Guardado"); limpiarForm(); cargarDatosDeNube(); }
-    }
-
-    function editarRegistro(id) {
-        const r = db.find(i => i.id === id);
-        if (!r) return;
-        document.getElementById('editId').value = r.id;
-        document.getElementById('idPrincipal').value = r.id_carga;
-        document.getElementById('fechaHora').value = r.fecha.replace(' ', 'T');
-        document.getElementById('bultos').value = r.bultos;
-        document.getElementById('encargado').value = r.encargado;
-        document.getElementById('almacenista').value = r.almacenista;
-        document.getElementById('funcionarioSeniat').value = r.funcionario_seniat || '';
-        document.getElementById('cliente').value = r.cliente;
-        document.getElementById('empresaCliente').value = r.empresa;
-        document.getElementById('cedulaCliente').value = r.cedula;
-        document.getElementById('contenido').value = r.contenido;
-        document.getElementById('noDeclarada').value = r.no_declared;
-        document.getElementById('estado').value = r.estado;
-        document.getElementById('obs').value = r.observaciones;
-        if(r.foto) { 
-            document.getElementById('photoPreview').src = r.foto; 
-            document.getElementById('photoPreview').classList.remove('hidden'); 
-        }
-        document.getElementById('btnGuardar').style.display = 'none';
-        document.getElementById('btnUpdate').style.display = 'block';
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    async function actualizarEnLaNube() {
-        const id_db = document.getElementById('editId').value;
-        const item = obtenerDatosForm();
-        const { error } = await _supabase.from('registros_carga').update(item).eq('id', id_db);
-        if (error) alert("Error: " + error.message);
-        else { alert("✅ Registro Actualizado"); limpiarForm(); cargarDatosDeNube(); }
-    }
-
-    function actualizarUI() {
-        const cuerpo = document.getElementById('cuerpoTabla');
-        const search = document.getElementById('globalSearch').value.toLowerCase();
-        cuerpo.innerHTML = '';
-        
-        const filtrados = db.filter(r => {
-            const matchModo = r.tipo === modoActual;
-            const matchSearch = !search || 
-                (r.id_carga && r.id_carga.toLowerCase().includes(search)) ||
-                (r.cliente && r.cliente.toLowerCase().includes(search)) ||
-                (r.empresa && r.empresa.toLowerCase().includes(search)) ||
-                (r.funcionario_seniat && r.funcionario_seniat.toLowerCase().includes(search)) ||
-                (r.encargado && r.encargado.toLowerCase().includes(search));
-            return matchModo && matchSearch;
-        });
-
-        document.getElementById('cTotal').innerText = filtrados.length;
-
-        filtrados.forEach(r => {
-            cuerpo.innerHTML += `<tr>
+    function render() {
+        const bus = document.getElementById('globalSearch').value.toLowerCase();
+        const body = document.getElementById('tablaBody');
+        body.innerHTML = "";
+        db.filter(r => r.tipo === modo && Object.values(r).some(v => String(v).toLowerCase().includes(bus))).forEach(r => {
+            body.innerHTML += `<tr>
                 <td>
-                    <button class="action-btn btn-edit" onclick="editarRegistro(${r.id})">✏️</button>
-                    <button class="action-btn btn-pdf" onclick="generarPDF(${JSON.stringify(r).replace(/"/g, '&quot;')})">📄</button>
-                    <button class="action-btn btn-del" onclick="eliminarRegistro(${r.id})">🗑️</button>
+                    <button class="action-btn" style="background:orange" onclick="editar(${r.id})">✏️</button>
+                    <button class="action-btn" style="background:red;color:white" onclick="eliminar(${r.id})">🗑️</button>
                 </td>
-                <td><b>${r.id_carga}</b></td>
-                <td>${r.cliente}</td>
-                <td>${r.empresa || '-'}</td>
-                <td>${r.cedula || '-'}</td>
-                <td><small>${r.fecha}</small></td>
-                <td>${r.funcionario_seniat || '-'}</td>
-                <td>${r.encargado || '-'}</td>
-                <td>${r.bultos || '-'}</td>
-                <td>${r.estado}</td>
-                <td>${r.foto ? `<img src="${r.foto}" class="img-table">` : 'N/A'}</td>
+                <td>${r.id_carga}</td><td>${r.cliente}</td><td>${r.empresa}</td><td>${r.fecha}</td><td>${r.funcionario_seniat || '-'}</td><td>${r.estado}</td>
+                <td>${r.foto ? `<img src="${r.foto}" class="img-table">` : 'No'}</td>
             </tr>`;
         });
     }
 
-    async function eliminarRegistro(id) {
-        if(confirm("¿Eliminar este registro?")) { 
-            await _supabase.from('registros_carga').delete().eq('id', id); 
-            cargarDatosDeNube(); 
-        }
+    function autocompletar(v) {
+        const r = db.find(i => i.cliente && i.cliente.toLowerCase() === v.trim().toLowerCase());
+        if(r) { document.getElementById('empresaCliente').value = r.empresa; document.getElementById('cedulaCliente').value = r.cedula; }
     }
 
-    function limpiarForm() {
-        const ids = ['editId','idPrincipal','fechaHora','bultos','encargado','almacenista','funcionarioSeniat','cliente','empresaCliente','cedulaCliente','contenido','noDeclarada','obs'];
-        ids.forEach(id => document.getElementById(id).value = '');
-        document.getElementById('photoPreview').src = '';
-        document.getElementById('photoPreview').classList.add('hidden');
-        document.getElementById('btnGuardar').style.display = 'block';
-        document.getElementById('btnUpdate').style.display = 'none';
+    function editar(id) {
+        const r = db.find(i => i.id === id);
+        document.getElementById('editId').value = r.id;
+        document.getElementById('idPrincipal').value = r.id_carga;
+        document.getElementById('cliente').value = r.cliente;
+        document.getElementById('empresaCliente').value = r.empresa;
+        document.getElementById('cedulaCliente').value = r.cedula;
+        document.getElementById('funcionario_seniat').value = r.funcionario_seniat;
+        document.getElementById('btnSave').style.display = 'none';
+        document.getElementById('btnUpd').style.display = 'block';
+        window.scrollTo(0,0);
     }
 
-    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.toggle('hidden'); }
-    async function initCamera() { 
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
-        const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); 
-        document.getElementById('snap').classList.remove('hidden'); 
-    }
-    function takePhoto() { 
-        const c = document.getElementById('canvas'); const v = document.getElementById('video'); 
-        c.width = v.videoWidth; c.height = v.videoHeight; 
-        c.getContext('2d').drawImage(v, 0, 0); 
-        document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.5); 
-        document.getElementById('photoPreview').classList.remove('hidden'); 
-        if(stream) stream.getTracks().forEach(t => t.stop()); 
-        v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); 
-    }
-
-    function loadLogo(e) { 
-        const reader = new FileReader(); 
-        reader.onload = (ev) => { 
-            appLogo = ev.target.result; 
-            localStorage.setItem('srca_logo', appLogo); 
-            document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; 
-        }; 
-        reader.readAsDataURL(e.target.files[0]); 
-    }
-
-    function actualizarListas() {
-        const lists = { 
-            listInspectores: [...new Set(db.map(i => i.encargado))], 
-            listAlmacenistas: [...new Set(db.map(i => i.almacenista))], 
-            listClientes: [...new Set(db.map(i => i.cliente))],
-            listSeniat: [...new Set(db.map(i => i.funcionario_seniat))] 
+    async function guardar() {
+        const id_db = document.getElementById('editId').value;
+        const obj = {
+            id_carga: document.getElementById('idPrincipal').value,
+            cliente: document.getElementById('cliente').value,
+            empresa: document.getElementById('empresaCliente').value,
+            cedula: document.getElementById('cedulaCliente').value,
+            funcionario_seniat: document.getElementById('funcionarioSeniat').value,
+            fecha: document.getElementById('fechaHora').value,
+            tipo: modo, foto: imgData
         };
-        for(let id in lists) { 
-            const dl = document.getElementById(id); 
-            if(dl) dl.innerHTML = lists[id].map(v => v ? `<option value="${v}">` : '').join(''); 
-        }
+        let res;
+        if(id_db) res = await _sb.from('registros_carga').update(obj).eq('id', id_db);
+        else res = await _sb.from('registros_carga').insert([obj]);
+        
+        if(res.error) alert("Error");
+        else { alert("OK"); location.reload(); }
     }
 
-    function generarPDF(item) {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'mm', 'a4'); const pw = doc.internal.pageSize.getWidth();
-        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 12, 25, 25);
-        doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 50, 20);
-        doc.setFontSize(9); doc.text(`MODALIDAD: ${item.tipo.toUpperCase()} | CONTROL: ${item.id_carga}`, 50, 26);
-        let y = 50; doc.setFontSize(10);
-        const data = [["CLIENTE", ite
+    async function eliminar(id) { if(confirm("¿Borrar?")) { await _sb.from('registros_carga').delete().eq('id', id); load(); } }
+    function cambiarModo(m) { modo = m; render(); }
+    async function initCam() { 
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden');
+        v.onclick = () => {
+            const canvas = document.getElementById('canvas');
+            canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+            canvas.getContext('2d').drawImage(v, 0, 0);
+            imgData = canvas.toDataURL('image/jpeg', 0.5);
+            document.getElementById('photoPreview').src = imgData;
+            document.getElementById('photoPreview').classList.remove('hidden');
+            stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden');
+        };
+    }
+    document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>
