@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Cloud Edition</title>
+    <title>S.C.C.A.M. Elite</title>
     
     <!-- LIBRERÍAS (Supabase + Excel + PDF) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -56,7 +56,7 @@
         .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 12px; width: 100%; }
 
         .history-section { background: var(--card); border-radius: 10px; padding: 10px; overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1400px; } /* Aumentado para dar espacio a todas las columnas */
         th { text-align: left; padding: 10px; color: #94a3b8; font-size: 0.65rem; border-bottom: 1px solid #334155; text-transform: uppercase; }
         td { padding: 10px; border-bottom: 1px solid #334155; font-size: 0.75rem; white-space: nowrap; }
         .img-table { width: 40px; height: 40px; border-radius: 5px; object-fit: cover; background: #334155; }
@@ -74,7 +74,7 @@
         <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
     </div>
 
-    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA (NUBE)</h1></div>
+    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA</h1></div>
 
     <div class="dashboard">
         <div class="stat-card"><span class="stat-badge" id="badgeModo">MAR</span><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
@@ -90,7 +90,7 @@
         <div class="form-grid">
             <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="ID Carga"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelSeguridad">N° Precinto</label><input type="text" id="bultos" placeholder="Seguridad"></div>
+            <div><label id="labelSeguridad">N° Precinto / Bultos</label><input type="text" id="bultos" placeholder="Seguridad"></div>
             
             <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
@@ -125,7 +125,7 @@
             <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
         </div>
         <div class="actions">
-            <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 REGISTRAR EN LA NUBE</button>
+            <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 REGISTRAR DATOS</button>
             <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ DESCARGAR ACTA PDF</button>
             <button class="btn" style="background:#10b981; color:white" onclick="exportarExcel()">REPORTE EXCEL GENERAL</button>
         </div>
@@ -134,11 +134,23 @@
     <datalist id="listInspectores"></datalist><datalist id="listAlmacenistas"></datalist><datalist id="listClientes"></datalist>
 
     <div class="history-section">
-        <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR REGISTRO..."></div>
+        <div class="search-box"><input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 BUSCAR POR ID O CLIENTE..."></div>
         <table id="tablaDatos">
             <thead>
                 <tr>
-                    <th>ID CARGA</th><th>FECHA</th><th>CLIENTE</th><th>ESTADO</th><th>INSPECTOR</th><th>FOTO</th><th>ACCIONES</th>
+                    <th>ID CARGA</th>
+                    <th>FECHA</th>
+                    <th>PRECINTO/BULTOS</th>
+                    <th>CLIENTE</th>
+                    <th>EMPRESA/ID</th>
+                    <th>INSPECTOR</th>
+                    <th>ALMACENISTA</th>
+                    <th>CONTENIDO</th>
+                    <th>HALLAZGOS</th>
+                    <th>ESTADO</th>
+                    <th>OBSERVACIONES</th>
+                    <th>FOTO</th>
+                    <th>ACCIONES</th>
                 </tr>
             </thead>
             <tbody id="cuerpoTabla"></tbody>
@@ -147,7 +159,6 @@
 </div>
 
 <script>
-    // 1. CONFIGURACIÓN SUPABASE
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -158,7 +169,6 @@
     let modoActual = 'Marítimo';
     let stream;
 
-    // Cargar logo e iniciar carga de datos
     if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
     document.addEventListener('DOMContentLoaded', cargarDatosDeNube);
 
@@ -167,7 +177,6 @@
         if (!error) { db = data; actualizarUI(); actualizarListas(); }
     }
 
-    // --- FUNCIONES CORE ---
     function loadLogo(e) {
         const reader = new FileReader();
         reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
@@ -186,7 +195,6 @@
     async function registrarEnLaNube() {
         const idVal = document.getElementById('idPrincipal').value;
         const cliVal = document.getElementById('cliente').value;
-
         if(!idVal || !cliVal) return alert("⚠️ Error: El ID y el Cliente son obligatorios.");
 
         const btn = document.getElementById('btnGuardar');
@@ -212,24 +220,22 @@
         const { error } = await _supabase.from('registros_carga').insert([item]);
 
         if (error) {
-            alert("❌ Fallo en la nube: " + error.message);
+            alert("❌ Fallo: " + error.message);
         } else {
             alert("✅ ¡REGISTRO EXITOSO!");
             currentPDFItem = item;
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
         }
-        btn.innerText = "🚀 REGISTRAR EN LA NUBE";
+        btn.innerText = "🚀 REGISTRAR DATOS";
         btn.disabled = false;
     }
 
-    // --- CÁMARA ---
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); document.getElementById('toggleCamBtn').classList.add('hidden'); }
     function cancelarFoto() { if(stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('seccionCamara').classList.add('hidden'); document.getElementById('toggleCamBtn').classList.remove('hidden'); document.getElementById('photoPreview').src = ''; document.getElementById('photoPreview').classList.add('hidden'); document.getElementById('video').classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
     async function initCamera() { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); }
     function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); const prev = document.getElementById('photoPreview'); prev.src = data; prev.classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
 
-    // --- UI Y LISTAS ---
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
         const filtro = document.getElementById('buscador').value.toLowerCase();
@@ -238,10 +244,19 @@
         document.getElementById('cTotal').innerText = filtrados.length;
 
         filtrados.forEach((item) => {
-            if(`${item.id_carga} ${item.cliente}`.toLowerCase().includes(filtro)) {
+            if(`${item.id_carga} ${item.cliente} ${item.empresa}`.toLowerCase().includes(filtro)) {
                 cuerpo.innerHTML += `<tr>
-                    <td><b>${item.id_carga}</b></td><td><small>${item.fecha}</small></td>
-                    <td>${item.cliente}</td><td>${item.estado}</td><td>${item.encargado}</td>
+                    <td><b>${item.id_carga}</b></td>
+                    <td><small>${item.fecha}</small></td>
+                    <td>${item.bultos || '-'}</td>
+                    <td>${item.cliente}</td>
+                    <td>${item.empresa || '-'}</td>
+                    <td>${item.encargado || '-'}</td>
+                    <td>${item.almacenista || '-'}</td>
+                    <td>${item.contenido || '-'}</td>
+                    <td style="color:var(--danger)">${item.no_declared || '-'}</td>
+                    <td>${item.estado}</td>
+                    <td>${item.observaciones || '-'}</td>
                     <td>${item.foto ? `<img src="${item.foto}" class="img-table">` : 'N/A'}</td>
                     <td>
                         <button class="action-btn btn-pdf" onclick="prepararPDFCloud(${JSON.stringify(item).replace(/"/g, '&quot;')})">📄</button>
@@ -253,7 +268,7 @@
     }
 
     async function eliminarRegistro(id_db) {
-        if(confirm("¿Eliminar de la nube?")) {
+        if(confirm("¿Eliminar este registro permanentemente?")) {
             await _supabase.from('registros_carga').delete().eq('id', id_db);
             await cargarDatosDeNube();
         }
@@ -264,7 +279,6 @@
         for(let id in lists) { const dl = document.getElementById(id); if(dl) dl.innerHTML = lists[id].map(v => v ? `<option value="${v}">` : '').join(''); }
     }
 
-    // --- PDF Y EXCEL ---
     function prepararPDFCloud(item) {
         const itemPDF = { id: item.id_carga, tipo: item.tipo, fecha: item.fecha, bultos: item.bultos, encargado: item.encargado, almacenista: item.almacenista, cliente: item.cliente, empresa: item.empresa, contenido: item.contenido, noDeclarado: item.no_declared, estado: item.estado, foto: item.foto };
         generarPDF(itemPDF);
@@ -276,8 +290,15 @@
         doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw/2, 50, { align: "center" });
         doc.setFontSize(10); doc.text(`Modalidad: ${item.tipo.toUpperCase()} | Fecha: ${item.fecha}`, pw/2, 58, { align: "center" });
         doc.line(20, 65, pw-20, 65); let y = 75; doc.setFontSize(11);
-        const labels = [["ID CARGA:", item.id], ["CLIENTE:", item.cliente], ["ESTADO:", item.estado], ["CONTENIDO:", item.contenido]];
-        labels.forEach(r => { doc.setFont(undefined, 'bold'); doc.text(r[0], 30, y); doc.setFont(undefined, 'normal'); doc.text(String(r[1]), 80, y); y += 8; });
+        const labels = [
+            ["ID CARGA:", item.id], 
+            ["CLIENTE:", item.cliente], 
+            ["IDENTIFICACIÓN:", item.empresa],
+            ["PRECINTO/BULTOS:", item.bultos],
+            ["ESTADO:", item.estado], 
+            ["CONTENIDO:", item.contenido]
+        ];
+        labels.forEach(r => { doc.setFont(undefined, 'bold'); doc.text(r[0], 30, y); doc.setFont(undefined, 'normal'); doc.text(String(r[1] || '-'), 80, y); y += 8; });
         if(item.foto) { doc.addImage(item.foto, 'JPEG', (pw/2)-40, y+5, 80, 60); y += 75; }
         doc.line(20, 260, 70, 260); doc.text("INSPECTOR", 45, 265, {align: "center"});
         doc.line(pw-70, 260, pw-20, 260); doc.text("ALMACENISTA", pw-45, 265, {align: "center"});
