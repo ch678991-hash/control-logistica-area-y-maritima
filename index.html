@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.I.C.A.M. Elite</title>
+    <title>S.I.C.A.M. Elite - Inteligente</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -22,7 +22,7 @@
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 
         .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .header-app h1 { font-size: 1rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; line-height: 1.2; }
+        .header-app h1 { font-size: 0.95rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; line-height: 1.3; }
 
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #334155; position: relative; }
@@ -86,22 +86,22 @@
 
     <div class="main-card">
         <div class="form-grid">
-            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="ID Carga"></div>
+            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="ID Obligatorio"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelSeguridad">N° Precinto / Seguridad</label><input type="text" id="bultos" placeholder="N° Precinto"></div>
+            <div><label id="labelSeguridad">N° Precinto / Seguridad</label><input type="text" id="bultos" placeholder="Seguridad"></div>
             
             <div><label>Inspector Actuante</label><input type="text" id="encargado" list="listInspectores"></div>
             <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
             
             <div class="full">
                 <label>Nombre del Cliente / Consignatario</label>
-                <input type="text" id="cliente" list="listClientes" oninput="autocompletarCliente(this.value)" placeholder="Escriba para buscar...">
+                <input type="text" id="cliente" list="listClientes" onchange="iaAutoFill(this.value)" placeholder="Escriba para buscar...">
             </div>
             
-            <div><label>Identificación (Cédula / RIF)</label><input type="text" id="cedulaCliente" placeholder="Cédula"></div>
-            <div><label>Nombre de la Empresa</label><input type="text" id="empresaCliente" placeholder="Empresa"></div>
+            <div><label>Identificación (Cédula / RIF)</label><input type="text" id="cedulaCliente" placeholder="Autocompletado"></div>
+            <div><label>Nombre de la Empresa</label><input type="text" id="empresaCliente" placeholder="Autocompletado"></div>
 
-            <div class="full"><label>Funcionario SENIAT Actuante</label><input type="text" id="seniat" list="listSeniat" placeholder="Nombre del funcionario"></div>
+            <div class="full"><label>Funcionario SENIAT</label><input type="text" id="seniat" list="listSeniat" placeholder="Nombre del funcionario"></div>
 
             <div class="full"><label>Contenido Declarado</label><input type="text" id="contenido"></div>
             <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
@@ -136,7 +136,6 @@
         </div>
     </div>
 
-    <!-- LISTAS DE AUTOCOMPLETADO -->
     <datalist id="listInspectores"></datalist>
     <datalist id="listAlmacenistas"></datalist>
     <datalist id="listClientes"></datalist>
@@ -178,39 +177,39 @@
         }
     }
 
-    // --- SISTEMA INTELIGENTE DE AUTOCOMPLETADO ---
-    function autocompletarCliente(nombre) {
+    // --- AUTOCOMPLETADO INTELIGENTE ---
+    function iaAutoFill(nombre) {
         if(!nombre) return;
-        // Busca el registro más reciente que coincida con ese nombre
-        const coincidencia = db.find(i => i.cliente && i.cliente.toLowerCase() === nombre.toLowerCase());
-        
-        if(coincidencia) {
-            document.getElementById('cedulaCliente').value = coincidencia.cedula || '';
-            document.getElementById('empresaCliente').value = coincidencia.empresa || '';
+        const record = db.find(i => i.cliente && i.cliente.trim().toLowerCase() === nombre.trim().toLowerCase());
+        if(record) {
+            document.getElementById('cedulaCliente').value = record.cedula || '';
+            document.getElementById('empresaCliente').value = record.empresa || '';
         }
     }
 
     function actualizarListas() {
-        const dataLists = {
-            listInspectores: [...new Set(db.map(i => i.encargado))],
-            listAlmacenistas: [...new Set(db.map(i => i.almacenista))],
-            listClientes: [...new Set(db.map(i => i.cliente))],
-            listSeniat: [...new Set(db.map(i => i.seniat_funcionario).filter(Boolean))] // Funcionario SENIAT
+        const lists = {
+            listInspectores: [...new Set(db.map(i => i.encargado))].filter(Boolean),
+            listAlmacenistas: [...new Set(db.map(i => i.almacenista))].filter(Boolean),
+            listClientes: [...new Set(db.map(i => i.cliente))].filter(Boolean),
+            listSeniat: [...new Set(db.map(i => i.seniat_funcionario))].filter(Boolean)
         };
-        
-        for(let id in dataLists) {
-            const dl = document.getElementById(id);
-            if(dl) dl.innerHTML = dataLists[id].map(v => v ? `<option value="${v}">` : '').join('');
+        for(let id in lists) {
+            const el = document.getElementById(id);
+            if(el) el.innerHTML = lists[id].map(v => `<option value="${v}">`).join('');
         }
     }
 
     async function registrarEnLaNube() {
-        const idVal = document.getElementById('idPrincipal').value;
-        const cliVal = document.getElementById('cliente').value;
-        if(!idVal || !cliVal) return alert("⚠️ Error: El ID y el Cliente son obligatorios.");
+        const idVal = document.getElementById('idPrincipal').value.trim();
+        const cliVal = document.getElementById('cliente').value.trim();
+
+        if(!idVal || !cliVal) {
+            return alert("⚠️ Error: El ID y el Cliente son obligatorios.");
+        }
 
         const btn = document.getElementById('btnGuardar');
-        btn.innerText = "⏳ ENVIANDO...";
+        btn.innerText = "⏳ PROCESANDO...";
         btn.disabled = true;
 
         const item = {
@@ -223,7 +222,7 @@
             cliente: cliVal,
             empresa: document.getElementById('empresaCliente').value,
             cedula: document.getElementById('cedulaCliente').value,
-            seniat_funcionario: document.getElementById('seniat').value, // Nuevo campo
+            seniat_funcionario: document.getElementById('seniat').value,
             contenido: document.getElementById('contenido').value,
             no_declared: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
@@ -258,6 +257,7 @@
         cuerpo.innerHTML = '';
         const filtrados = db.filter(i => i.tipo === modoActual);
         document.getElementById('cTotal').innerText = filtrados.length;
+        document.getElementById('cInc').innerText = filtrados.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
 
         filtrados.forEach((item) => {
             if(`${item.id_carga} ${item.cliente}`.toLowerCase().includes(filtro)) {
@@ -291,7 +291,7 @@
     }
 
     function prepararPDFCloud(item) {
-        const itemPDF = { ...item, id: item.id_carga, seniat: item.seniat_funcionario || 'N/A' };
+        const itemPDF = { ...item, id: item.id_carga };
         generarPDF(itemPDF);
     }
 
