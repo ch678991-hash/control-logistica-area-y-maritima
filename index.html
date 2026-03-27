@@ -49,14 +49,14 @@
         .btn-save { background: #0f172a; color: white; }
         .btn-update { background: var(--warning); color: #0f172a; display: none; }
 
-        /* SECCIÓN DE BÚSQUEDA Y TABLA */
+        /* SECCIÓN DE ABAJO ACTUALIZADA */
         .history-section { background: var(--card); border-radius: 10px; padding: 15px; margin-top: 20px; }
         .search-container { margin-bottom: 15px; }
-        .search-container input { background: #0f172a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; }
+        .search-container input { background: #0f172a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; font-size: 0.9rem; }
 
-        .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 1300px; color: var(--text); }
-        th { text-align: left; padding: 12px; color: var(--accent); font-size: 0.65rem; border-bottom: 2px solid #334155; text-transform: uppercase; }
+        .table-wrapper { overflow-x: auto; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1400px; color: var(--text); }
+        th { text-align: left; padding: 12px; color: var(--accent); font-size: 0.65rem; border-bottom: 2px solid #334155; background: #1e293b; position: sticky; top: 0; }
         td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; white-space: nowrap; }
         
         .action-btn { border: none; padding: 8px; border-radius: 6px; cursor: pointer; margin-right: 4px; }
@@ -78,7 +78,7 @@
 
     <div class="dashboard">
         <div class="stat-card"><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
-        <div class="stat-card"><h4>MODO</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
+        <div class="stat-card"><h4>MODO ACTUAL</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
     </div>
 
     <div class="tabs">
@@ -132,10 +132,10 @@
         </div>
     </div>
 
-    <!-- SECCIÓN DE ABAJO ACTUALIZADA CON BUSCADOR -->
+    <!-- TABLA DE GESTIÓN CON BUSCADOR -->
     <div class="history-section">
         <div class="search-container">
-            <input type="text" id="globalSearch" placeholder="🔍 BUSCAR POR ID, CLIENTE, EMPRESA O SENIAT..." onkeyup="actualizarUI()">
+            <input type="text" id="globalSearch" placeholder="🔍 BUSCAR POR CUALQUIER DATO (ID, CLIENTE, EMPRESA, SENIAT...)" onkeyup="actualizarUI()">
         </div>
         <div class="table-wrapper">
             <table>
@@ -148,8 +148,8 @@
                         <th>CÉDULA/RIF</th>
                         <th>FECHA</th>
                         <th>SENIAT</th>
-                        <th>PRECINTO</th>
                         <th>INSPECTOR</th>
+                        <th>PRECINTO</th>
                         <th>ESTADO</th>
                         <th>FOTO</th>
                     </tr>
@@ -219,10 +219,10 @@
 
     async function registrarEnLaNube() {
         const item = obtenerDatosForm();
-        if(!item.id_carga || !item.cliente) return alert("Complete ID y Cliente");
+        if(!item.id_carga || !item.cliente) return alert("Faltan datos obligatorios");
         const { error } = await _supabase.from('registros_carga').insert([item]);
         if (error) alert("Error: " + error.message);
-        else { alert("✅ Guardado"); limpiarForm(); cargarDatosDeNube(); }
+        else { alert("✅ Registro Guardado"); limpiarForm(); cargarDatosDeNube(); }
     }
 
     function editarRegistro(id) {
@@ -256,7 +256,7 @@
         const item = obtenerDatosForm();
         const { error } = await _supabase.from('registros_carga').update(item).eq('id', id_db);
         if (error) alert("Error: " + error.message);
-        else { alert("✅ Actualizado"); limpiarForm(); cargarDatosDeNube(); }
+        else { alert("✅ Registro Actualizado"); limpiarForm(); cargarDatosDeNube(); }
     }
 
     function actualizarUI() {
@@ -265,13 +265,14 @@
         cuerpo.innerHTML = '';
         
         const filtrados = db.filter(r => {
-            const matchesModo = r.tipo === modoActual;
-            const matchesSearch = !search || 
+            const matchModo = r.tipo === modoActual;
+            const matchSearch = !search || 
                 (r.id_carga && r.id_carga.toLowerCase().includes(search)) ||
                 (r.cliente && r.cliente.toLowerCase().includes(search)) ||
                 (r.empresa && r.empresa.toLowerCase().includes(search)) ||
-                (r.funcionario_seniat && r.funcionario_seniat.toLowerCase().includes(search));
-            return matchesModo && matchesSearch;
+                (r.funcionario_seniat && r.funcionario_seniat.toLowerCase().includes(search)) ||
+                (r.encargado && r.encargado.toLowerCase().includes(search));
+            return matchModo && matchSearch;
         });
 
         document.getElementById('cTotal').innerText = filtrados.length;
@@ -289,8 +290,8 @@
                 <td>${r.cedula || '-'}</td>
                 <td><small>${r.fecha}</small></td>
                 <td>${r.funcionario_seniat || '-'}</td>
-                <td>${r.bultos || '-'}</td>
                 <td>${r.encargado || '-'}</td>
+                <td>${r.bultos || '-'}</td>
                 <td>${r.estado}</td>
                 <td>${r.foto ? `<img src="${r.foto}" class="img-table">` : 'N/A'}</td>
             </tr>`;
@@ -298,7 +299,10 @@
     }
 
     async function eliminarRegistro(id) {
-        if(confirm("¿Eliminar?")) { await _supabase.from('registros_carga').delete().eq('id', id); cargarDatosDeNube(); }
+        if(confirm("¿Eliminar este registro?")) { 
+            await _supabase.from('registros_carga').delete().eq('id', id); 
+            cargarDatosDeNube(); 
+        }
     }
 
     function limpiarForm() {
@@ -310,7 +314,6 @@
         document.getElementById('btnUpdate').style.display = 'none';
     }
 
-    // Funciones de Cámara
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.toggle('hidden'); }
     async function initCamera() { 
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
@@ -356,5 +359,4 @@
         doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 50, 20);
         doc.setFontSize(9); doc.text(`MODALIDAD: ${item.tipo.toUpperCase()} | CONTROL: ${item.id_carga}`, 50, 26);
         let y = 50; doc.setFontSize(10);
-        const data = [["CLIENTE", item.cliente], ["EMPRESA", item.empresa], ["RIF/ID", item.cedula], ["SENIAT", item.funcionario_seniat], ["ESTADO", item.estado]];
-        data.forEach(r => { y+=8; doc.setFont("helvetica", 
+        const data = [["CLIENTE", ite
