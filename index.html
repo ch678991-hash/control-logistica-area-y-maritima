@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.I.C.A.M. Elite - Inteligente</title>
+    <title>S.I.C.A.M. Elite - Fix</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -86,7 +86,7 @@
 
     <div class="main-card">
         <div class="form-grid">
-            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="ID Obligatorio"></div>
+            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="ID Carga"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
             <div><label id="labelSeguridad">N° Precinto / Seguridad</label><input type="text" id="bultos" placeholder="Seguridad"></div>
             
@@ -98,8 +98,8 @@
                 <input type="text" id="cliente" list="listClientes" onchange="iaAutoFill(this.value)" placeholder="Escriba para buscar...">
             </div>
             
-            <div><label>Identificación (Cédula / RIF)</label><input type="text" id="cedulaCliente" placeholder="Autocompletado"></div>
-            <div><label>Nombre de la Empresa</label><input type="text" id="empresaCliente" placeholder="Autocompletado"></div>
+            <div><label>Identificación (Cédula / RIF)</label><input type="text" id="cedulaCliente"></div>
+            <div><label>Nombre de la Empresa</label><input type="text" id="empresaCliente"></div>
 
             <div class="full"><label>Funcionario SENIAT</label><input type="text" id="seniat" list="listSeniat" placeholder="Nombre del funcionario"></div>
 
@@ -177,13 +177,13 @@
         }
     }
 
-    // --- AUTOCOMPLETADO INTELIGENTE ---
     function iaAutoFill(nombre) {
         if(!nombre) return;
         const record = db.find(i => i.cliente && i.cliente.trim().toLowerCase() === nombre.trim().toLowerCase());
         if(record) {
             document.getElementById('cedulaCliente').value = record.cedula || '';
             document.getElementById('empresaCliente').value = record.empresa || '';
+            // Si el nombre del funcionario está guardado en observaciones, lo extraemos (opcional)
         }
     }
 
@@ -192,7 +192,8 @@
             listInspectores: [...new Set(db.map(i => i.encargado))].filter(Boolean),
             listAlmacenistas: [...new Set(db.map(i => i.almacenista))].filter(Boolean),
             listClientes: [...new Set(db.map(i => i.cliente))].filter(Boolean),
-            listSeniat: [...new Set(db.map(i => i.seniat_funcionario))].filter(Boolean)
+            // Buscamos nombres de funcionarios guardados previamente en observaciones
+            listSeniat: [...new Set(db.filter(i => i.observaciones && i.observaciones.includes("SENIAT:")).map(i => i.observaciones.split("SENIAT:")[1].trim()))].filter(Boolean)
         };
         for(let id in lists) {
             const el = document.getElementById(id);
@@ -203,14 +204,17 @@
     async function registrarEnLaNube() {
         const idVal = document.getElementById('idPrincipal').value.trim();
         const cliVal = document.getElementById('cliente').value.trim();
+        const seniatVal = document.getElementById('seniat').value.trim();
+        let obsBase = document.getElementById('obs').value.trim();
 
-        if(!idVal || !cliVal) {
-            return alert("⚠️ Error: El ID y el Cliente son obligatorios.");
-        }
+        if(!idVal || !cliVal) return alert("⚠️ Error: El ID y el Cliente son obligatorios.");
 
         const btn = document.getElementById('btnGuardar');
         btn.innerText = "⏳ PROCESANDO...";
         btn.disabled = true;
+
+        // Metemos el funcionario en las observaciones para evitar el error de columna inexistente
+        const obsFinal = seniatVal ? `${obsBase} | SENIAT: ${seniatVal}` : obsBase;
 
         const item = {
             id_carga: idVal,
@@ -222,11 +226,10 @@
             cliente: cliVal,
             empresa: document.getElementById('empresaCliente').value,
             cedula: document.getElementById('cedulaCliente').value,
-            seniat_funcionario: document.getElementById('seniat').value,
             contenido: document.getElementById('contenido').value,
             no_declared: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
-            observaciones: document.getElementById('obs').value,
+            observaciones: obsFinal,
             foto: document.getElementById('photoPreview').src || ''
         };
 
@@ -236,7 +239,7 @@
             alert("❌ Fallo en la nube: " + error.message);
         } else {
             alert("✅ ¡REGISTRO EXITOSO!");
-            currentPDFItem = item;
+            currentPDFItem = { ...item, seniat_funcionario: seniatVal };
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
         }
@@ -244,13 +247,12 @@
         btn.disabled = false;
     }
 
-    // --- CÁMARA ---
+    // --- CÁMARA Y OTROS ---
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); document.getElementById('toggleCamBtn').classList.add('hidden'); }
     function cancelarFoto() { if(stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('seccionCamara').classList.add('hidden'); document.getElementById('toggleCamBtn').classList.remove('hidden'); document.getElementById('photoPreview').src = ''; document.getElementById('photoPreview').classList.add('hidden'); document.getElementById('video').classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
     async function initCamera() { try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); } catch(e) { alert("Error cámara"); } }
     function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); const data = c.toDataURL('image/jpeg', 0.6); document.getElementById('photoPreview').src = data; document.getElementById('photoPreview').classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden'); }
 
-    // --- UI ---
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
         const filtro = document.getElementById('buscador').value.toLowerCase();
@@ -291,7 +293,12 @@
     }
 
     function prepararPDFCloud(item) {
-        const itemPDF = { ...item, id: item.id_carga };
+        // Extraemos el funcionario de las observaciones si existe
+        let func = "N/A";
+        if(item.observaciones && item.observaciones.includes("SENIAT:")) {
+            func = item.observaciones.split("SENIAT:")[1].trim();
+        }
+        const itemPDF = { ...item, id: item.id_carga, seniat_funcionario: func };
         generarPDF(itemPDF);
     }
 
@@ -313,10 +320,7 @@
         doc.save(`ACTA_${item.id}.pdf`);
     }
 
-    function descargarActaManual() { if(currentPDFItem) { prepararPDFCloud(currentPDFItem); document.getElementById('btnDescargar').style.display='none'; limpiarForm(); } }
+    function descargarActaManual() { if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display='none'; limpiarForm(); } }
     function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'cliente', 'empresaCliente', 'cedulaCliente', 'seniat', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
     function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, id, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Datos"); XLSX.writeFile(wb, "Reporte_SICAM.xlsx"); }
-    function loadLogo(e) { const reader = new FileReader(); reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; reader.readAsDataURL(e.target.files[0]); }
-</script>
-</body>
-</html>
+    function lo
