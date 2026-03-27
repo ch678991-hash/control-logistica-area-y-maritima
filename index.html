@@ -166,7 +166,6 @@
         const match = db.find(i => i.cliente === nombre);
         if(match) { document.getElementById('cedulaCliente').value = match.cedula; document.getElementById('empresaCliente').value = match.empresa; }
     }
-
     function actualizarListas() {
         const lists = {
             listInspectores: [...new Set(db.map(i => i.encargado))],
@@ -223,7 +222,6 @@
         actualizarUI();
         actualizarListas();
     }
-
     function descargarActaManual() { if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); } }
 
     // --- FUNCIÓN PDF CORREGIDA Y CENTRALIZADA ---
@@ -273,7 +271,6 @@
             doc.setTextColor(0);
             y += 15;
         }
-
         if(item.foto) {
             y += 5;
             doc.text("EVIDENCIA FOTOGRÁFICA:", pageWidth / 2, y, { align: "center" });
@@ -299,7 +296,6 @@
         doc.line(140, ySign, 190, ySign);
         doc.text("SENIAT (Opcional)", 165, ySign + 5, { align: "center" });
         doc.text(item.seniat || "________", 165, ySign - 2, { align: "center" });
-
         doc.save(`ACTA_${item.id}.pdf`);
     }
 
@@ -329,7 +325,6 @@
     function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v51', JSON.stringify(db)); actualizarUI(); actualizarListas(); } }
     function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
     function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
-    
     actualizarListas();
     actualizarUI();
 </script>
