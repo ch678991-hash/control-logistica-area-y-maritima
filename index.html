@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Reporte Profesional</title>
+    <title>S.C.C.A.M. Elite - Reporte Profesional Cloud</title>
+    
+    <!-- LIBRERÍAS EXTERNAS (Añadido Supabase) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <style>
         :root {
             --bg: #0f172a; --card: #1e293b; --accent: #22d3ee; --text: #f1f5f9;
@@ -70,7 +74,7 @@
         <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
     </div>
 
-    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA AÉREA Y MARÍTIMA</h1></div>
+    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA (CLOUD)</h1></div>
 
     <div class="dashboard">
         <div class="stat-card"><span class="stat-badge" id="badgeModo">MAR</span><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
@@ -93,7 +97,7 @@
             <div><label>Encargado Almacén</label><input type="text" id="almacenista" list="listAlmacenistas"></div>
             <div><label style="color:#d97706">Funcionario SENIAT (Opcional)</label><input type="text" id="seniat" list="listSeniat" style="background:#fffbeb"></div>
             
-            <div><label>Nombre del Cliente</label><input type="text" id="cliente" list="listClientes" onchange="autoRellenarCliente(this.value)"></div>
+            <div><label>Nombre del Cliente</label><input type="text" id="cliente" list="listClientes"></div>
             <div><label>Cédula / RIF Cliente</label><input type="text" id="cedulaCliente"></div>
             <div class="full"><label>Empresa del Cliente</label><input type="text" id="empresaCliente" list="listEmpresas"></div>
 
@@ -148,7 +152,12 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sccam_final_v51')) || [];
+    // --- CONFIGURACIÓN SUPABASE ---
+    const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
+    const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
+    const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+    let db = []; 
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let modoActual = 'Marítimo';
@@ -156,16 +165,28 @@
 
     if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
 
+    // Cargar datos al iniciar
+    document.addEventListener('DOMContentLoaded', cargarDatosDeNube);
+
+    async function cargarDatosDeNube() {
+        const { data, error } = await _supabase
+            .from('registros_carga')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (!error) {
+            db = data;
+            actualizarUI();
+            actualizarListas();
+        }
+    }
+
     function loadLogo(e) {
         const reader = new FileReader();
         reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
         reader.readAsDataURL(e.target.files[0]);
     }
 
-    function autoRellenarCliente(nombre) {
-        const match = db.find(i => i.cliente === nombre);
-        if(match) { document.getElementById('cedulaCliente').value = match.cedula; document.getElementById('empresaCliente').value = match.empresa; }
-    }
     function actualizarListas() {
         const lists = {
             listInspectores: [...new Set(db.map(i => i.encargado))],
@@ -176,7 +197,7 @@
         };
         for(let id in lists) {
             const dl = document.getElementById(id);
-            dl.innerHTML = lists[id].map(val => val ? `<option value="${val}">` : '').join('');
+            if(dl) dl.innerHTML = lists[id].map(val => val ? `<option value="${val}">` : '').join('');
         }
     }
 
@@ -196,137 +217,112 @@
         actualizarUI();
     }
 
-    function registrar() {
+    async function registrar() {
+        const idVal = document.getElementById('idPrincipal').value;
+        const clienteVal = document.getElementById('cliente').value;
+
+        if (!idVal || !clienteVal) return alert("⚠️ Error: El N° de Contenedor y el Nombre del Cliente son obligatorios.");
+
+        const btn = document.getElementById('btnGuardar');
+        btn.innerText = "CONECTANDO...";
+        btn.disabled = true;
+
         const item = {
-            id: document.getElementById('idPrincipal').value,
+            id_carga: idVal,
             tipo: modoActual,
             fecha: document.getElementById('fechaHora').value.replace('T', ' '),
             bultos: document.getElementById('bultos').value,
             encargado: document.getElementById('encargado').value,
             almacenista: document.getElementById('almacenista').value,
             seniat: document.getElementById('seniat').value,
-            cliente: document.getElementById('cliente').value,
+            cliente: clienteVal,
             cedula: document.getElementById('cedulaCliente').value,
             empresa: document.getElementById('empresaCliente').value,
             contenido: document.getElementById('contenido').value,
-            noDeclarado: document.getElementById('noDeclarada').value,
+            no_declarado: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
-            obs: document.getElementById('obs').value,
+            observaciones: document.getElementById('obs').value,
             foto: document.getElementById('photoPreview').src || ''
         };
-        if(!item.id || !item.cliente) return alert("Complete los campos.");
-        db.push(item);
-        localStorage.setItem('sccam_final_v51', JSON.stringify(db));
-        currentPDFItem = item;
-        document.getElementById('btnDescargar').style.display = 'block';
-        actualizarUI();
-        actualizarListas();
+
+        const { error } = await _supabase.from('registros_carga').insert([item]);
+
+        if (error) {
+            alert("❌ Error en la nube: " + error.message);
+        } else {
+            alert("✅ ¡ÉXITO! Registro guardado en Supabase.");
+            currentPDFItem = item;
+            document.getElementById('btnDescargar').style.display = 'block';
+            await cargarDatosDeNube();
+        }
+        
+        btn.innerText = "REGISTRAR EN LA NUBE";
+        btn.disabled = false;
     }
-    function descargarActaManual() { if(currentPDFItem) { generarPDF(currentPDFItem); document.getElementById('btnDescargar').style.display = 'none'; limpiarForm(); } }
 
-    // --- FUNCIÓN PDF CORREGIDA Y CENTRALIZADA ---
-    function generarPDF(item) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        
-        // 1. Encabezado Centralizado
-        if(appLogo) doc.addImage(appLogo, 'PNG', (pageWidth/2) - 15, 10, 30, 30);
-        
-        doc.setFontSize(18);
-        doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pageWidth / 2, 50, { align: "center" });
-        
-        doc.setFontSize(10);
-        doc.text(`Modalidad: ${item.tipo.toUpperCase()} | Fecha: ${item.fecha}`, pageWidth / 2, 58, { align: "center" });
-        
-        doc.setDrawColor(200);
-        doc.line(20, 65, pageWidth - 20, 65);
-
-        // 2. Bloque de Datos Centralizado (Formato Tabla)
-        let y = 75;
-        doc.setFontSize(11);
-        const labels = [
-            ["ID CARGA:", item.id], ["CLIENTE:", item.cliente], 
-            ["CÉDULA/RIF:", item.cedula], ["EMPRESA:", item.empresa],
-            [item.tipo === 'Marítimo' ? "PRECINTO:" : "BULTOS:", item.bultos],
-            ["ESTADO:", item.estado], ["CONTENIDO:", item.contenido]
-        ];
-
-        labels.forEach(row => {
-            doc.setFont(undefined, 'bold');
-            doc.text(row[0], 30, y);
-            doc.setFont(undefined, 'normal');
-            doc.text(String(row[1]), 80, y);
-            y += 8;
-        });
-
-        // 3. Hallazgos y Foto (Si existen)
-        if(item.noDeclarado) {
-            y += 5;
-            doc.setTextColor(200, 0, 0);
-            doc.setFont(undefined, 'bold');
-            doc.text("HALLAZGOS NO DECLARADOS:", 30, y);
-            doc.setFont(undefined, 'normal');
-            doc.text(item.noDeclarado, 30, y + 6, { maxWidth: 150 });
-            doc.setTextColor(0);
-            y += 15;
+    async function eliminar(id_db) {
+        if(confirm("¿Eliminar de la nube?")) {
+            const { error } = await _supabase.from('registros_carga').delete().eq('id', id_db);
+            if(!error) await cargarDatosDeNube();
         }
-        if(item.foto) {
-            y += 5;
-            doc.text("EVIDENCIA FOTOGRÁFICA:", pageWidth / 2, y, { align: "center" });
-            doc.addImage(item.foto, 'JPEG', (pageWidth/2) - 40, y + 5, 80, 60);
-            y += 70;
-        }
-
-        // 4. Firmas Centralizadas y Equilibradas
-        const ySign = 265;
-        doc.setFontSize(9);
-        
-        // Firma Izquierda
-        doc.line(20, ySign, 70, ySign);
-        doc.text("INSPECTOR", 45, ySign + 5, { align: "center" });
-        doc.text(item.encargado, 45, ySign - 2, { align: "center" });
-
-        // Firma Centro
-        doc.line(80, ySign, 130, ySign);
-        doc.text("ALMACENISTA", 105, ySign + 5, { align: "center" });
-        doc.text(item.almacenista, 105, ySign - 2, { align: "center" });
-
-        // Firma Derecha
-        doc.line(140, ySign, 190, ySign);
-        doc.text("SENIAT (Opcional)", 165, ySign + 5, { align: "center" });
-        doc.text(item.seniat || "________", 165, ySign - 2, { align: "center" });
-        doc.save(`ACTA_${item.id}.pdf`);
     }
 
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
         const filtro = document.getElementById('buscador').value.toLowerCase();
         cuerpo.innerHTML = '';
+        
         const filtrados = db.filter(item => item.tipo === modoActual);
         document.getElementById('cTotal').innerText = filtrados.length;
         document.getElementById('cInc').innerText = filtrados.filter(i => i.estado !== 'Excelente' && i.estado !== 'Bueno').length;
 
-        filtrados.slice().reverse().forEach((item) => {
-            const index = db.indexOf(item);
-            if(`${item.id} ${item.cliente} ${item.empresa} ${item.cedula}`.toLowerCase().includes(filtro)) {
+        filtrados.forEach((item) => {
+            const searchable = `${item.id_carga} ${item.cliente} ${item.empresa}`.toLowerCase();
+            if(searchable.includes(filtro)) {
                 cuerpo.innerHTML += `<tr>
-                    <td><small>${item.tipo}</small></td><td><b>${item.id}</b></td><td><small>${item.fecha}</small></td>
+                    <td><small>${item.tipo}</small></td><td><b>${item.id_carga}</b></td><td><small>${item.fecha}</small></td>
                     <td>${item.cliente}</td><td>${item.cedula}</td><td>${item.empresa}</td>
                     <td style="color:${item.estado === 'Excelente' || item.estado === 'Bueno' ? 'var(--success)' : 'var(--danger)'}">${item.estado}</td>
                     <td>${item.encargado}</td><td>${item.seniat}</td><td>${item.almacenista}</td>
                     <td>${item.foto ? `<img src="${item.foto}" class="img-table">` : 'N/A'}</td>
-                    <td><button class="action-btn btn-pdf" onclick="generarPDF(db[${index}])">📄</button><button class="action-btn btn-del" onclick="eliminar(${index})">🗑️</button></td>
+                    <td>
+                        <button class="action-btn btn-pdf" onclick="prepararPDFCloud(${JSON.stringify(item).replace(/"/g, '&quot;')})">📄</button>
+                        <button class="action-btn btn-del" onclick="eliminar(${item.id})">🗑️</button>
+                    </td>
                 </tr>`;
             }
         });
     }
 
-    function eliminar(idx) { if(confirm("¿Eliminar?")) { db.splice(idx, 1); localStorage.setItem('sccam_final_v51', JSON.stringify(db)); actualizarUI(); actualizarListas(); } }
-    function limpiarForm() { ['idPrincipal', 'fechaHora', 'bultos', 'encargado', 'almacenista', 'seniat', 'cliente', 'cedulaCliente', 'empresaCliente', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); cancelarFoto(); }
-    function exportarExcel() { const ws = XLSX.utils.json_to_sheet(db.map(({foto, ...r}) => r)); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data"); XLSX.writeFile(wb, "Reporte_SCCAM.xlsx"); }
-    actualizarListas();
-    actualizarUI();
-</script>
-</body>
-</html>
+    function prepararPDFCloud(item) {
+        const itemPDF = {
+            id: item.id_carga, tipo: item.tipo, fecha: item.fecha, bultos: item.bultos, encargado: item.encargado,
+            almacenista: item.almacenista, seniat: item.seniat, cliente: item.cliente, cedula: item.cedula,
+            empresa: item.empresa, contenido: item.contenido, noDeclarado: item.no_declarado, estado: item.estado, foto: item.foto
+        };
+        generarPDF(itemPDF);
+    }
+
+    function generarPDF(item) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        if(appLogo) doc.addImage(appLogo, 'PNG', (pageWidth/2) - 15, 10, 30, 30);
+        doc.setFontSize(18);
+        doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pageWidth / 2, 50, { align: "center" });
+        doc.setFontSize(10);
+        doc.text(`Modalidad: ${item.tipo.toUpperCase()} | Fecha: ${item.fecha}`, pageWidth / 2, 58, { align: "center" });
+        doc.setDrawColor(200); doc.line(20, 65, pageWidth - 20, 65);
+        let y = 75; doc.setFontSize(11);
+        const labels = [["ID CARGA:", item.id], ["CLIENTE:", item.cliente], ["CÉDULA/RIF:", item.cedula], ["EMPRESA:", item.empresa], [item.tipo === 'Marítimo' ? "PRECINTO:" : "BULTOS:", item.bultos], ["ESTADO:", item.estado], ["CONTENIDO:", item.contenido]];
+        labels.forEach(row => { doc.setFont(undefined, 'bold'); doc.text(row[0], 30, y); doc.setFont(undefined, 'normal'); doc.text(String(row[1]), 80, y); y += 8; });
+        if(item.noDeclarado) { doc.setTextColor(200, 0, 0); doc.text("HALLAZGOS NO DECLARADOS: " + item.noDeclarado, 30, y + 5, { maxWidth: 150 }); doc.setTextColor(0); y += 15; }
+        if(item.foto) { doc.addImage(item.foto, 'JPEG', (pageWidth/2) - 40, y + 5, 80, 60); y += 70; }
+        const ySign = 265; doc.setFontSize(9);
+        doc.line(20, ySign, 70, ySign); doc.text("INSPECTOR", 45, ySign + 5, { align: "center" });
+        doc.line(80, ySign, 130, ySign); doc.text("ALMACENISTA", 105, ySign + 5, { align: "center" });
+        doc.line(140, ySign, 190, ySign); doc.text("SENIAT", 165, ySign + 5, { align: "center" });
+        doc.save(`ACTA_${item.id}.pdf`);
+    }
+
+    function descargarActaManual() { if(currentPDFItem) { prepararPDFCloud(currentPDFItem); document.getE
