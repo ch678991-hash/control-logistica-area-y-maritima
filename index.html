@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.I.C.A.M. Elite - Pro Edition</title>
+    <title>S.C.C.A.M. Elite - Pro Edition</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -40,6 +40,9 @@
         label { display: block; font-weight: 800; font-size: 0.7rem; margin-bottom: 5px; color: #334155; text-transform: uppercase; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; font-family: inherit; }
         
+        /* Estilo para el buscador con flechita */
+        .autocomplete-wrapper { position: relative; }
+
         .camera-box { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 2px solid #cbd5e1; margin-top: 10px; text-align: center; }
         .hidden { display: none !important; }
         #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid #94a3b8; max-width: 320px; }
@@ -82,16 +85,24 @@
     </div>
 
     <div class="main-card">
-        <input type="hidden" id="edit_id"> <!-- ID para edición -->
+        <input type="hidden" id="edit_id">
         <div class="form-grid">
             <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
             <div><label>N° de Precinto</label><input type="text" id="numPrecinto"></div>
             <div><label>Cantidad de Bultos</label><input type="number" id="cantBultos"></div>
             <div class="full"><label>Personas Encargadas / Responsables</label><input type="text" id="encargado"></div>
-            <div><label>Cliente</label><input type="text" id="cliente"></div>
+            
+            <!-- CLIENTE CON AUTOCOMPLETADO -->
+            <div class="autocomplete-wrapper">
+                <label>Cliente (Buscar o escribir)</label>
+                <input type="text" id="cliente" list="clientesList" oninput="autocompletarCliente(this.value)" placeholder="Escriba nombre...">
+                <datalist id="clientesList"></datalist>
+            </div>
+            
             <div><label>Cédula / ID</label><input type="text" id="cedulaCliente"></div>
             <div class="full"><label>Empresa Solicitante</label><input type="text" id="empresaCliente"></div>
+            
             <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
             <div><label>Condición Física</label>
                 <select id="estado">
@@ -123,9 +134,9 @@
     </div>
 
     <div class="history-section">
-        <h3 style="color:var(--accent); font-size: 0.9rem;">HISTORIAL DE REGISTROS</h3>
+        <h3 style="color:var(--accent); font-size: 0.8rem;">HISTORIAL DE REGISTROS</h3>
         <div class="search-box">
-            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar registros (ID, Cliente, Cédula)...">
+            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar registros...">
         </div>
         <div class="table-container">
             <table>
@@ -150,7 +161,6 @@
     </div>
 
 <script>
-    // Configuración Supabase
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
@@ -161,13 +171,47 @@
     let currentPDFItem = null;
     let stream;
 
+    // Memoria de clientes
+    let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
+
     if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
 
-    document.addEventListener('DOMContentLoaded', cargarDatosDeNube);
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarDatosDeNube();
+        actualizarDatalistClientes();
+    });
 
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
-        if (!error) { db = data; actualizarUI(); }
+        if (!error) { 
+            db = data; 
+            actualizarUI(); 
+            // Sincronizar memoria de clientes con datos de la nube
+            data.forEach(reg => {
+                if(reg.cliente && reg.cedula) {
+                    memoriaClientes[reg.cliente] = { cedula: reg.cedula, empresa: reg.empresa };
+                }
+            });
+            localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes));
+            actualizarDatalistClientes();
+        }
+    }
+
+    function actualizarDatalistClientes() {
+        const list = document.getElementById('clientesList');
+        list.innerHTML = '';
+        Object.keys(memoriaClientes).sort().forEach(nombre => {
+            const option = document.createElement('option');
+            option.value = nombre;
+            list.appendChild(option);
+        });
+    }
+
+    function autocompletarCliente(valor) {
+        if(memoriaClientes[valor]) {
+            document.getElementById('cedulaCliente').value = memoriaClientes[valor].cedula;
+            document.getElementById('empresaCliente').value = memoriaClientes[valor].empresa;
+        }
     }
 
     function cambiarModo(m) {
@@ -182,8 +226,10 @@
 
     async function registrarEnLaNube() {
         const idVal = document.getElementById('idPrincipal').value;
+        const nombreCliente = document.getElementById('cliente').value;
         const editId = document.getElementById('edit_id').value;
-        if(!idVal) return alert("Ingrese ID");
+        
+        if(!idVal || !nombreCliente) return alert("Ingrese ID y Cliente");
 
         const btn = document.getElementById('btnGuardar');
         btn.innerText = "⏳ PROCESANDO...";
@@ -195,7 +241,7 @@
             cant_bultos: document.getElementById('cantBultos').value,
             encargado: document.getElementById('encargado').value,
             almacenista: document.getElementById('almacenista').value,
-            cliente: document.getElementById('cliente').value,
+            cliente: nombreCliente,
             empresa: document.getElementById('empresaCliente').value,
             cedula: document.getElementById('cedulaCliente').value,
             contenido: document.getElementById('contenido').value,
@@ -205,6 +251,10 @@
             foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '')
         };
 
+        // Guardar cliente en memoria local
+        memoriaClientes[nombreCliente] = { cedula: item.cedula, empresa: item.empresa };
+        localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes));
+
         let res;
         if(editId) {
             res = await _supabase.from('registros_carga').update(item).eq('id', editId);
@@ -213,11 +263,12 @@
         }
 
         if (!res.error) {
-            alert(editId ? "✅ Registro Actualizado" : "✅ Registro Guardado");
+            alert("✅ Éxito");
             currentPDFItem = item;
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
             limpiarForm();
+            actualizarDatalistClientes();
         } else {
             alert("Error: " + res.error.message);
         }
@@ -230,11 +281,9 @@
         const filtro = document.getElementById('buscador').value.toLowerCase();
         const filtrados = db.filter(i => i.tipo === modoActual);
         document.getElementById('cTotal').innerText = filtrados.length;
-
         cuerpo.innerHTML = '';
         filtrados.forEach((i) => {
-            const rowStr = `${i.id_carga} ${i.cliente} ${i.empresa} ${i.cedula}`.toLowerCase();
-            if(rowStr.includes(filtro)) {
+            if(`${i.id_carga} ${i.cliente} ${i.empresa}`.toLowerCase().includes(filtro)) {
                 cuerpo.innerHTML += `<tr>
                     <td class="action-btns">
                         <button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
@@ -243,7 +292,7 @@
                     </td>
                     <td><b>${i.id_carga}</b></td>
                     <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
-                    <td style="color:var(--accent); font-weight:bold">${i.num_precinto || '-'}</td>
+                    <td style="color:var(--accent)">${i.num_precinto || '-'}</td>
                     <td>${i.cant_bultos || '0'}</td>
                     <td>${i.encargado || '-'}</td>
                     <td>${i.cliente || ''}</td>
@@ -271,7 +320,6 @@
         document.getElementById('contenido').value = item.contenido;
         document.getElementById('noDeclarada').value = item.no_declared;
         document.getElementById('obs').value = item.observaciones;
-        
         if(item.foto) {
             document.getElementById('photoPreview').src = item.foto;
             document.getElementById('photoPreview').classList.remove('hidden');
@@ -281,89 +329,41 @@
     }
 
     async function eliminarRegistro(id) {
-        if(confirm("¿Seguro que desea eliminar permanentemente este registro?")) {
+        if(confirm("¿Eliminar?")) {
             await _supabase.from('registros_carga').delete().eq('id', id);
             await cargarDatosDeNube();
         }
     }
 
-    // PDF MEJORADO "ZERO ESPACIOS"
     function generarPDF(item) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const pw = doc.internal.pageSize.getWidth();
-        
         if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
-        
         doc.setFont("helvetica", "bold"); doc.setFontSize(16);
         doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw / 2, 20, { align: "center" });
-        doc.setFontSize(10); doc.text("S.I.C.A.M.", pw / 2, 26, { align: "center" });
+        doc.setFontSize(10); doc.text("Sistema de control de carga Marítima y Área S.I.C.A.M.", pw / 2, 26, { align: "center" });
         doc.line(15, 38, pw - 15, 38);
-
         let y = 45;
-        const rowHeight = 10;
-        const drawCell = (label, val, x, y, w) => {
-            doc.setFont(undefined, 'bold'); doc.text(label, x + 2, y + 6);
-            doc.setFont(undefined, 'normal'); doc.text(String(val || '-'), x + 35, y + 6);
-            doc.rect(x, y, w, rowHeight);
+        const drawCell = (l, v, x, w) => {
+            doc.setFont(undefined, 'bold'); doc.text(l, x + 2, y + 6);
+            doc.setFont(undefined, 'normal'); doc.text(String(v || '-'), x + 35, y + 6);
+            doc.rect(x, y, w, 10);
         };
-
-        drawCell("ID CARGA:", item.id_carga, 15, y, 90);
-        drawCell("FECHA:", item.fecha, 105, y, 90); y += rowHeight;
-        drawCell("MODALIDAD:", item.tipo, 15, y, 90);
-        drawCell("ESTADO:", item.estado, 105, y, 90); y += rowHeight;
-        drawCell("PRECINTO:", item.num_precinto, 15, y, 90);
-        drawCell("BULTOS:", item.cant_bultos, 105, y, 90); y += rowHeight;
-        drawCell("CLIENTE:", item.cliente, 15, y, 90);
-        drawCell("CEDULA:", item.cedula, 105, y, 90); y += rowHeight;
-        drawCell("EMPRESA:", item.empresa, 15, y, 180); y += rowHeight;
-
-        doc.setFont(undefined, 'bold'); doc.text("DETALLES Y CONTENIDO:", 15, y + 7); y += 10;
+        drawCell("ID CARGA:", item.id_carga, 15, 90); drawCell("FECHA:", item.fecha, 105, 90); y += 10;
+        drawCell("MODALIDAD:", item.tipo, 15, 90); drawCell("ESTADO:", item.estado, 105, 90); y += 10;
+        drawCell("PRECINTO:", item.num_precinto, 15, 90); drawCell("BULTOS:", item.cant_bultos, 105, 90); y += 10;
+        drawCell("CLIENTE:", item.cliente, 15, 90); drawCell("CEDULA:", item.cedula, 105, 90); y += 10;
+        drawCell("EMPRESA:", item.empresa, 15, 180); y += 15;
+        doc.setFont(undefined, 'bold'); doc.text("CONTENIDO:", 15, y); y += 4;
         doc.setFont(undefined, 'normal'); doc.rect(15, y, 180, 20);
         doc.text(doc.splitTextToSize(item.contenido || 'Sin descripción', 170), 17, y + 7); y += 25;
-
-        if(item.foto) {
-            doc.addImage(item.foto, 'JPEG', 60, y, 90, 60);
-            y += 70;
-        }
-
+        if(item.foto) doc.addImage(item.foto, 'JPEG', 60, y, 90, 60);
         let fY = 265;
         doc.line(15, fY, 65, fY); doc.text("RESPONSABLE", 40, fY + 5, {align:"center"});
         doc.line(80, fY, 130, fY); doc.text("ALMACENISTA", 105, fY + 5, {align:"center"});
         doc.line(145, fY, 195, fY); doc.text("SENIAT", 170, fY + 5, {align:"center"});
-
         doc.save(`ACTA_${item.id_carga}.pdf`);
     }
 
-    // Cámara y Utilidades
-    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
-    async function initCamera() { 
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        document.getElementById('video').srcObject = stream;
-        document.getElementById('video').classList.remove('hidden');
-        document.getElementById('snap').classList.remove('hidden');
-    }
-    function takePhoto() {
-        const c = document.getElementById('canvas'); const v = document.getElementById('video');
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
-        document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.6);
-        document.getElementById('photoPreview').classList.remove('hidden');
-        if(stream) stream.getTracks().forEach(t => t.stop());
-        v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden');
-    }
-    function loadLogo(e) {
-        const reader = new FileReader();
-        reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
-        reader.readAsDataURL(e.target.files[0]);
-    }
-    function limpiarForm() {
-        document.getElementById('edit_id').value = '';
-        ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('photoPreview').classList.add('hidden');
-        document.getElementById('btnGuardar').innerText = "🚀 SUBIR REGISTRO A LA NUBE";
-    }
-    function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
-</script>
-</body>
-</html>
+    // Otra
