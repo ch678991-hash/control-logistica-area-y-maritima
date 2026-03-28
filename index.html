@@ -42,7 +42,7 @@
         .logo-container { text-align: center; margin-bottom: 10px; position: relative; }
         .nav-btns { position: absolute; right: 10px; top: 10px; display: flex; gap: 5px; }
         .logout-btn { background: var(--danger); border:none; color:white; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem; cursor:pointer;}
-        #admin-toggle-btn { background: var(--warning); border:none; color:white; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem; cursor:pointer; display: none; font-weight: bold; }
+        #admin-toggle-btn { background: var(--warning); border:none; color:white; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem; cursor:pointer; display: none; font-weight: bold; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
         
         .logo-placeholder { width: 90px; height: 90px; border: 2px dashed var(--accent); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #1e293b; cursor: pointer; overflow: hidden; }
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
@@ -51,10 +51,12 @@
         .header-app h1 { font-size: 1.1rem; color: var(--accent); margin: 0; text-transform: uppercase; }
 
         /* --- PANEL DE CONTROL MAESTRO --- */
-        #admin-panel { background: #1e293b; border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 2px solid var(--warning); display: none; }
+        #admin-panel { background: #1e293b; border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 2px solid var(--warning); display: none; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .user-row { background: #0f172a; margin-bottom: 10px; padding: 15px; border-radius: 10px; border-left: 4px solid var(--accent); }
         .user-info { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-        .btn-panel { padding: 8px; border-radius: 6px; border: none; color: white; cursor: pointer; font-size: 0.7rem; font-weight: bold; margin-right: 5px; }
+        .user-actions { display: flex; gap: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+        .btn-panel { flex: 1; padding: 8px; border-radius: 6px; border: none; color: white; cursor: pointer; font-size: 0.7rem; font-weight: bold; }
 
         /* Dashboard y Formulario */
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
@@ -90,6 +92,9 @@
         th { text-align: left; padding: 14px; color: var(--accent); font-size: 0.75rem; border-bottom: 2px solid var(--border); text-transform: uppercase; background: #1e293b; position: sticky; top: 0; }
         td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: white; vertical-align: middle; }
         .img-table { width: 65px; height: 65px; border-radius: 6px; object-fit: cover; border: 1px solid var(--accent); }
+        
+        .action-btns { display: flex; gap: 5px; flex-direction: column; }
+        .btn-mini { padding: 8px; border-radius: 6px; border: none; color: white; cursor: pointer; font-size: 0.7rem; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -127,11 +132,14 @@
             <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
         </div>
 
-        <!-- PANEL DE SÚPER USUARIO (MASTER) -->
+        <!-- PANEL DE SÚPER USUARIO (SOLO ACCESIBLE PARA MASTER) -->
         <div id="admin-panel">
             <h3 style="color:var(--warning); margin-top:0">🛠️ ADMINISTRACIÓN DE CUENTAS</h3>
-            <div id="user-list-admin"></div>
-            <button class="btn" style="background:var(--card); margin-top:15px; color:var(--accent); border:1px solid var(--accent); height:40px; padding:0" onclick="togglePanelAdmin()">CERRAR PANEL</button>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 15px;">Bienvenido, Super Usuario. Aquí tienes el control absoluto de los accesos:</p>
+            <div id="user-list-admin">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <button class="btn" style="background:var(--card); margin-top:15px; color:var(--accent); border:1px solid var(--accent); height:40px; padding:0" onclick="togglePanelAdmin()">CERRAR PANEL MAESTRO</button>
         </div>
 
         <div class="header-app">
@@ -178,19 +186,16 @@
                 </div>
                 <div class="full"><label>Contenido Declarado</label><textarea id="contenido" rows="2"></textarea></div>
                 <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
-                
-                <!-- CÁMARA OPTIMIZADA -->
                 <div class="full">
-                    <button type="button" class="btn" style="background:#6366f1; color:white;" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO</button>
+                    <button type="button" class="btn" style="background:#6366f1; color:white;" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO</button>
                     <div id="seccionCamara" class="camera-box hidden">
                         <video id="video" autoplay playsinline class="hidden"></video>
-                        <button id="initCamBtn" class="btn" style="background:var(--success); color:white; margin:10px 0" onclick="initCamera()">ENCENDER CÁMARA</button>
+                        <button class="btn" style="background:var(--success); color:white; margin:10px 0" onclick="initCamera()">ENCENDER CÁMARA</button>
                         <button id="snap" class="btn hidden" style="background:var(--danger); color:white" onclick="takePhoto()">TOMAR FOTO</button>
                         <img id="photoPreview" class="hidden">
                         <canvas id="canvas" class="hidden"></canvas>
                     </div>
                 </div>
-
                 <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
             </div>
 
@@ -203,12 +208,24 @@
         <div class="history-section">
             <h3 style="color:var(--accent); font-size: 0.8rem;">HISTORIAL DE REGISTROS</h3>
             <div class="search-box">
-                <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar registros...">
+                <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar por contenedor, guía o cliente...">
             </div>
             <div class="table-container">
                 <table>
                     <thead>
-                        <tr><th>Acciones</th><th>ID Carga</th><th>Fecha</th><th>Precinto</th><th>Bultos</th><th>Responsable</th><th>Cliente</th><th>Cédula</th><th>Empresa</th><th>Estado</th><th>Foto</th></tr>
+                        <tr>
+                            <th>Acciones</th>
+                            <th>ID Carga</th>
+                            <th>Fecha</th>
+                            <th>Precinto</th>
+                            <th>Bultos</th>
+                            <th>Responsable</th>
+                            <th>Cliente</th>
+                            <th>Cédula</th>
+                            <th>Empresa</th>
+                            <th>Estado</th>
+                            <th>Foto</th>
+                        </tr>
                     </thead>
                     <tbody id="cuerpoTabla"></tbody>
                 </table>
@@ -220,14 +237,21 @@
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
-    const AUTH_MASTER_CODE = "SICAM2026"; 
 
+    const AUTH_MASTER_CODE = "SICAM2026"; 
+    
+    // USUARIOS POR DEFECTO
     let usuarios = JSON.parse(localStorage.getItem('sicam_db_users')) || {
         "admin": { pass: "1234", rol: "operador", status: "activo" },
         "master": { pass: "admin99", rol: "super", status: "activo" }
     };
-    let currentUser = null, db = [], modoActual = 'Marítimo', streamCamera = null;
-    let appLogo = localStorage.getItem('srca_logo') || '', currentPDFItem = null;
+
+    let currentUser = null;
+    let db = []; 
+    let modoActual = 'Marítimo';
+    let appLogo = localStorage.getItem('srca_logo') || '';
+    let currentPDFItem = null;
+    let stream;
     let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -235,130 +259,270 @@
         if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
     });
 
-    // --- AUTENTICACIÓN ---
+    // --- LÓGICA DE LOGIN Y PERMISOS ---
+    function toggleAuthMode(isRegister) {
+        document.getElementById('login-fields').classList.toggle('hidden', isRegister);
+        document.getElementById('register-fields').classList.toggle('hidden', !isRegister);
+        document.getElementById('auth-title').innerText = isRegister ? "REGISTRO DE OPERADOR" : "S.I.C.A.M. ACCESO";
+    }
+
     function manejarAuth() {
         const u = document.getElementById('user-input').value.trim().toLowerCase();
         const p = document.getElementById('pass-input').value;
-        if (usuarios[u] && usuarios[u].pass === p) {
-            if (usuarios[u].status === "suspendido") return alert("Cuenta restringida.");
-            iniciarApp(u);
-        } else { alert("Error de acceso."); }
+
+        if (usuarios[u]) {
+            if (usuarios[u].status === "suspendido") return alert("Acceso restringido por el Administrador.");
+            if (usuarios[u].pass === p) {
+                iniciarApp(u);
+            } else {
+                alert("Contraseña incorrecta.");
+            }
+        } else {
+            alert("Usuario no registrado.");
+        }
     }
 
     function registrarUsuario() {
-        const u = document.getElementById('reg-user').value.toLowerCase().trim(), p = document.getElementById('reg-pass').value, m = document.getElementById('reg-master').value;
+        const u = document.getElementById('reg-user').value.toLowerCase().trim();
+        const p = document.getElementById('reg-pass').value;
+        const m = document.getElementById('reg-master').value;
+
+        if(!u || !p) return alert("Complete los campos.");
         if(m !== AUTH_MASTER_CODE) return alert("Código maestro inválido.");
+        if(usuarios[u]) return alert("Este usuario ya existe.");
+        
         usuarios[u] = { pass: p, rol: "operador", status: "activo" };
-        localStorage.setItem('sicam_db_users', JSON.stringify(usuarios));
-        alert("Creado."); toggleAuthMode(false);
+        guardarUsuarios();
+        alert("¡Cuenta creada! Ya puedes ingresar.");
+        toggleAuthMode(false);
     }
 
     function iniciarApp(userKey) {
-        currentUser = usuarios[userKey]; localStorage.setItem('sicam_active_session', userKey);
+        currentUser = usuarios[userKey];
+        currentUser.id_key = userKey;
+        localStorage.setItem('sicam_active_session', userKey);
+        
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
         document.getElementById('welcome-user').innerText = `USUARIO: ${userKey.toUpperCase()}`;
+        
+        // MOSTRAR BOTÓN DE ADMIN SÓLO SI ES MASTER
         if(currentUser.rol === "super") {
             document.getElementById('admin-toggle-btn').style.display = 'block';
             actualizarListaUsuariosAdmin();
         }
-        cargarDatosDeNube(); actualizarDatalistClientes();
+
+        cargarDatosDeNube();
+        actualizarDatalistClientes();
     }
 
-    function toggleAuthMode(isReg) {
-        document.getElementById('login-fields').classList.toggle('hidden', isReg);
-        document.getElementById('register-fields').classList.toggle('hidden', !isReg);
-    }
-
-    function cerrarSesion() { stopCamera(); localStorage.removeItem('sicam_active_session'); location.reload(); }
-
-    // --- PANEL ADMIN ---
+    // --- FUNCIONES DEL PANEL DE CONTROL MAESTRO ---
     function togglePanelAdmin() {
-        const p = document.getElementById('admin-panel');
-        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+        const panel = document.getElementById('admin-panel');
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        if(panel.style.display === 'block') window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function actualizarListaUsuariosAdmin() {
-        const c = document.getElementById('user-list-admin'); c.innerHTML = '';
+        const container = document.getElementById('user-list-admin');
+        container.innerHTML = '';
+        
         Object.keys(usuarios).forEach(u => {
-            const card = document.createElement('div'); card.className = 'user-row';
-            card.innerHTML = `<div class="user-info"><b>${u}</b> | Clave: ${usuarios[u].pass} | Status: ${usuarios[u].status}</div>
-                <button class="btn-panel" style="background:var(--warning)" onclick="statusUsuario('${u}')">Restringir/Activar</button>
-                <button class="btn-panel" style="background:var(--danger)" onclick="eliminarUsuario('${u}')">Borrar</button>`;
-            c.appendChild(card);
+            const user = usuarios[u];
+            const isSuspended = user.status === "suspendido";
+            const card = document.createElement('div');
+            card.className = 'user-row';
+            
+            card.innerHTML = `
+                <div class="user-info">
+                    <div>
+                        <b style="color:var(--accent); font-size:1rem">${u.toUpperCase()}</b><br>
+                        <small style="color:#94a3b8">ROL: ${user.rol.toUpperCase()}</small>
+                    </div>
+                    <div style="text-align: right">
+                        <span style="color:var(--success); font-weight:bold">CLAVE: ${user.pass}</span><br>
+                        <small style="${isSuspended ? 'color:var(--danger)' : 'color:var(--success)'}">ESTADO: ${user.status.toUpperCase()}</small>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <button class="btn-panel" style="background:${isSuspended ? 'var(--success)' : 'var(--warning)'}" onclick="statusUsuario('${u}')">
+                        ${isSuspended ? 'ACTIVAR' : 'RESTRINGIR'}
+                    </button>
+                    ${u !== 'master' && u !== 'admin' ? `
+                        <button class="btn-panel" style="background:var(--danger)" onclick="eliminarUsuario('${u}')">ELIMINAR</button>
+                    ` : ''}
+                </div>
+            `;
+            container.appendChild(card);
         });
     }
 
-    function statusUsuario(u) { usuarios[u].status = usuarios[u].status === "activo" ? "suspendido" : "activo"; localStorage.setItem('sicam_db_users', JSON.stringify(usuarios)); actualizarListaUsuariosAdmin(); }
-    function eliminarUsuario(u) { if(u!=='master'){delete usuarios[u]; localStorage.setItem('sicam_db_users', JSON.stringify(usuarios)); actualizarListaUsuariosAdmin();} }
+    function statusUsuario(u) {
+        usuarios[u].status = usuarios[u].status === "activo" ? "suspendido" : "activo";
+        guardarUsuarios();
+        actualizarListaUsuariosAdmin();
+    }
+
+    function eliminarUsuario(u) {
+        if(confirm(`¿Estás seguro de eliminar permanentemente a ${u.toUpperCase()}?`)) {
+            delete usuarios[u];
+            guardarUsuarios();
+            actualizarListaUsuariosAdmin();
+        }
+    }
+
+    function guardarUsuarios() {
+        localStorage.setItem('sicam_db_users', JSON.stringify(usuarios));
+    }
 
     function verificarSesion() {
-        const s = localStorage.getItem('sicam_active_session');
-        if(s && usuarios[s] && usuarios[s].status === "activo") iniciarApp(s);
+        const sesion = localStorage.getItem('sicam_active_session');
+        if(sesion && usuarios[sesion] && usuarios[sesion].status === "activo") {
+            iniciarApp(sesion);
+        } else {
+            localStorage.removeItem('sicam_active_session');
+        }
     }
 
-    // --- CÁMARA (OPTIMIZADA) ---
-    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
-    async function initCamera() {
-        try {
-            stopCamera();
-            streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            const v = document.getElementById('video'); v.srcObject = streamCamera;
-            v.classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); document.getElementById('initCamBtn').classList.add('hidden');
-        } catch (e) { alert("Error cámara."); }
-    }
-    function stopCamera() {
-        if(streamCamera) { streamCamera.getTracks().forEach(t => t.stop()); streamCamera = null; }
-        const v = document.getElementById('video'); if(v){ v.srcObject = null; v.classList.add('hidden'); }
-    }
-    function takePhoto() {
-        const c = document.getElementById('canvas'), v = document.getElementById('video'), p = document.getElementById('photoPreview');
-        c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
-        p.src = c.toDataURL('image/jpeg', 0.6); p.classList.remove('hidden');
-        stopCamera(); document.getElementById('snap').classList.add('hidden'); document.getElementById('initCamBtn').classList.remove('hidden');
+    function cerrarSesion() {
+        localStorage.removeItem('sicam_active_session');
+        location.reload();
     }
 
-    // --- NUBE Y FORMULARIO ---
+    // --- LÓGICA DE FORMULARIO SUPABASE (MANTENIDA) ---
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
-        if (!error) { db = data; actualizarUI(); }
+        if (!error) { 
+            db = data; 
+            actualizarUI(); 
+            data.forEach(reg => {
+                if(reg.cliente && reg.cedula) memoriaClientes[reg.cliente] = { cedula: reg.cedula, empresa: reg.empresa };
+            });
+            localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes));
+            actualizarDatalistClientes();
+        }
+    }
+
+    function actualizarDatalistClientes() {
+        const list = document.getElementById('clientesList');
+        list.innerHTML = '';
+        Object.keys(memoriaClientes).sort().forEach(nombre => {
+            const option = document.createElement('option');
+            option.value = nombre;
+            list.appendChild(option);
+        });
+    }
+
+    function autocompletarCliente(valor) {
+        if(memoriaClientes[valor]) {
+            document.getElementById('cedulaCliente').value = memoriaClientes[valor].cedula;
+            document.getElementById('empresaCliente').value = memoriaClientes[valor].empresa;
+        }
+    }
+
+    function cambiarModo(m) {
+        if(modoActual === m) return; 
+        modoActual = m;
+        document.getElementById('tabM').classList.toggle('active', m === 'Marítimo');
+        document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
+        document.getElementById('txtModo').innerText = m.toUpperCase();
+        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
+        actualizarUI();
     }
 
     function actualizarUI() {
-        const cuerpo = document.getElementById('cuerpoTabla'), f = document.getElementById('buscador').value.toLowerCase();
-        const filt = db.filter(i => i.tipo === modoActual);
-        document.getElementById('cTotal').innerText = filt.length;
-        let h = '';
-        filt.forEach(i => {
-            if(`${i.id_carga} ${i.cliente}`.toLowerCase().includes(f)) {
-                h += `<tr><td><button onclick='generarPDF(${JSON.stringify(i)})'>PDF</button></td><td>${i.id_carga}</td><td>${i.fecha}</td><td>${i.num_precinto}</td><td>${i.cant_bultos}</td><td>${i.encargado}</td><td>${i.cliente}</td><td>${i.cedula}</td><td>${i.empresa}</td><td>${i.estado}</td><td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td></tr>`;
+        const cuerpo = document.getElementById('cuerpoTabla');
+        const filtro = document.getElementById('buscador').value.toLowerCase();
+        const filtrados = db.filter(i => i.tipo === modoActual);
+        document.getElementById('cTotal').innerText = filtrados.length;
+        
+        let html = '';
+        filtrados.forEach((i) => {
+            if(`${i.id_carga} ${i.cliente} ${i.empresa}`.toLowerCase().includes(filtro)) {
+                html += `<tr>
+                    <td class="action-btns">
+                        <button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
+                        <button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button>
+                        <button class="btn-mini" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">BORRAR</button>
+                    </td>
+                    <td><b>${i.id_carga}</b></td>
+                    <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
+                    <td>${i.num_precinto || '-'}</td>
+                    <td>${i.cant_bultos || '0'}</td>
+                    <td>${i.encargado || '-'}</td>
+                    <td>${i.cliente || ''}</td>
+                    <td>${i.cedula || ''}</td>
+                    <td>${i.empresa || ''}</td>
+                    <td>${i.estado}</td>
+                    <td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
+                </tr>`;
             }
         });
-        cuerpo.innerHTML = h;
+        cuerpo.innerHTML = html;
     }
 
     async function registrarEnLaNube() {
-        const id = document.getElementById('idPrincipal').value, cl = document.getElementById('cliente').value;
-        if(!id || !cl) return alert("Falta ID o Cliente");
-        const item = { id_carga: id, tipo: modoActual, fecha: document.getElementById('fechaHora').value, num_precinto: document.getElementById('numPrecinto').value, cant_bultos: document.getElementById('cantBultos').value, encargado: document.getElementById('encargado').value, almacenista: document.getElementById('almacenista').value, cliente: cl, empresa: document.getElementById('empresaCliente').value, cedula: document.getElementById('cedulaCliente').value, contenido: document.getElementById('contenido').value, no_declared: document.getElementById('noDeclarada').value, estado: document.getElementById('estado').value, observaciones: document.getElementById('obs').value, foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : '' };
-        await _supabase.from('registros_carga').insert([item]);
-        alert("Guardado."); cargarDatosDeNube(); limpiarForm();
+        const idVal = document.getElementById('idPrincipal').value;
+        const nombreCliente = document.getElementById('cliente').value;
+        const editId = document.getElementById('edit_id').value;
+        if(!idVal || !nombreCliente) return alert("Falta ID de Carga o Cliente");
+        const btn = document.getElementById('btnGuardar');
+        btn.innerText = "⏳ GUARDANDO..."; btn.disabled = true;
+        const item = { id_carga: idVal, tipo: modoActual, fecha: document.getElementById('fechaHora').value, num_precinto: document.getElementById('numPrecinto').value, cant_bultos: document.getElementById('cantBultos').value, encargado: document.getElementById('encargado').value, almacenista: document.getElementById('almacenista').value, cliente: nombreCliente, empresa: document.getElementById('empresaCliente').value, cedula: document.getElementById('cedulaCliente').value, contenido: document.getElementById('contenido').value, no_declared: document.getElementById('noDeclarada').value, estado: document.getElementById('estado').value, observaciones: document.getElementById('obs').value, foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '') };
+        if(editId) { await _supabase.from('registros_carga').update(item).eq('id', editId); } 
+        else { await _supabase.from('registros_carga').insert([item]); }
+        alert("✅ Registro Guardado");
+        currentPDFItem = item; document.getElementById('btnDescargar').style.display = 'block';
+        await cargarDatosDeNube(); limpiarForm();
+        btn.innerText = "🚀 GUARDAR REGISTRO"; btn.disabled = false;
     }
 
-    function cambiarModo(m) { modoActual = m; document.getElementById('tabM').classList.toggle('active', m === 'Marítimo'); document.getElementById('tabA').classList.toggle('active', m === 'Aéreo'); document.getElementById('txtModo').innerText = m.toUpperCase(); actualizarUI(); }
-    function autocompletarCliente(v) { if(memoriaClientes[v]) { document.getElementById('cedulaCliente').value = memoriaClientes[v].cedula; document.getElementById('empresaCliente').value = memoriaClientes[v].empresa; } }
-    function actualizarDatalistClientes() { const l = document.getElementById('clientesList'); l.innerHTML = ''; Object.keys(memoriaClientes).forEach(c => { const o = document.createElement('option'); o.value = c; l.appendChild(o); }); }
-    function loadLogo(e) { const r = new FileReader(); r.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; r.readAsDataURL(e.target.files[0]); }
-    function limpiarForm() { document.querySelectorAll('input, textarea').forEach(i => { if(i.id!=="buscador")i.value=''; }); stopCamera(); document.getElementById('photoPreview').classList.add('hidden'); }
+    function cargarEdicion(item) {
+        document.getElementById('edit_id').value = item.id;
+        document.getElementById('idPrincipal').value = item.id_carga;
+        document.getElementById('fechaHora').value = item.fecha;
+        document.getElementById('numPrecinto').value = item.num_precinto;
+        document.getElementById('cantBultos').value = item.cant_bultos;
+        document.getElementById('encargado').value = item.encargado;
+        document.getElementById('cliente').value = item.cliente;
+        document.getElementById('cedulaCliente').value = item.cedula;
+        document.getElementById('empresaCliente').value = item.empresa;
+        document.getElementById('almacenista').value = item.almacenista;
+        document.getElementById('estado').value = item.estado;
+        document.getElementById('contenido').value = item.contenido;
+        document.getElementById('noDeclarada').value = item.no_declared;
+        document.getElementById('obs').value = item.observaciones;
+        if(item.foto) { document.getElementById('photoPreview').src = item.foto; document.getElementById('photoPreview').classList.remove('hidden'); }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function eliminarRegistro(id) { if(confirm("¿Borrar registro de la nube?")) { await _supabase.from('registros_carga').delete().eq('id', id); await cargarDatosDeNube(); } }
 
     function generarPDF(item) {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        const { jsPDF } = window.jspdf; const doc = new jsPDF(); const pw = doc.internal.pageSize.getWidth();
         if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
-        doc.text("ACTA DE RECONOCIMIENTO", 50, 20);
-        doc.text(`ID: ${item.id_carga}`, 15, 45); doc.text(`Cliente: ${item.cliente}`, 15, 55);
-        if(item.foto) doc.addImage(item.foto, 'JPEG', 60, 70, 90, 60);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw / 2, 20, { align: "center" });
+        doc.setFontSize(10); doc.text("S.I.C.A.M. - Control de Carga", pw / 2, 26, { align: "center" });
+        doc.line(15, 38, pw - 15, 38); let y = 45;
+        const cell = (l, v, x, w) => { doc.setFont(undefined, 'bold'); doc.text(l, x + 2, y + 6); doc.setFont(undefined, 'normal'); doc.text(String(v || '-'), x + 35, y + 6); doc.rect(x, y, w, 10); };
+        cell("ID CARGA:", item.id_carga, 15, 90); cell("FECHA:", item.fecha, 105, 90); y += 10;
+        cell("MODALIDAD:", item.tipo, 15, 90); cell("ESTADO:", item.estado, 105, 90); y += 10;
+        cell("PRECINTO:", item.num_precinto, 15, 90); cell("BULTOS:", item.cant_bultos, 105, 90); y += 10;
+        cell("CLIENTE:", item.cliente, 15, 90); cell("CEDULA:", item.cedula, 105, 90); y += 10;
+        cell("EMPRESA:", item.empresa, 15, 180); y += 15;
+        doc.setFont(undefined, 'bold'); doc.text("CONTENIDO:", 15, y); y += 4; doc.rect(15, y, 180, 20); doc.setFont(undefined, 'normal');
+        doc.text(doc.splitTextToSize(item.contenido || 'Sin descripción', 170), 17, y + 7); y += 25;
+        if(item.foto) doc.addImage(item.foto, 'JPEG', 60, y, 90, 60);
+        let fY = 265; doc.line(15, fY, 65, fY); doc.text("RESPONSABLE", 40, fY + 5, {align:"center"}); doc.line(80, fY, 130, fY); doc.text("ALMACENISTA", 105, fY + 5, {align:"center"}); doc.line(145, fY, 195, fY); doc.text("SENIAT", 170, fY + 5, {align:"center"});
         doc.save(`ACTA_${item.id_carga}.pdf`);
     }
+
+    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
+    async function initCamera() { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); document.getElementById('video').srcObject = stream; document.getElementById('video').classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); }
+    function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.6); document.getElementById('photoPreview').classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); }
+    function loadLogo(e) { const reader = new FileReader(); reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; reader.readAsDataURL(e.target.files[0]); }
+    function limpiarForm() { document.getElementById('edit_id').value = ''; ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); document.getElementById('photoPreview').classList.add('hidden'); }
+    function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
 </script>
 </body>
 </html>
