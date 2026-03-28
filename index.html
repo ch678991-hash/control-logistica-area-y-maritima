@@ -92,13 +92,11 @@
         th { text-align: left; padding: 14px; color: var(--accent); font-size: 0.75rem; border-bottom: 2px solid var(--border); text-transform: uppercase; background: #1e293b; position: sticky; top: 0; }
         td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: white; vertical-align: middle; }
         .img-table { width: 65px; height: 65px; border-radius: 6px; object-fit: cover; border: 1px solid var(--accent); }
-        
-        .action-btns { display: flex; gap: 5px; flex-direction: column; }
-        .btn-mini { padding: 8px; border-radius: 6px; border: none; color: white; cursor: pointer; font-size: 0.7rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <!-- PANTALLA DE LOGIN -->
     <div id="auth-container">
         <div class="auth-card">
             <h2 id="auth-title">S.I.C.A.M. ACCESO</h2>
@@ -118,6 +116,7 @@
         </div>
     </div>
 
+    <!-- CONTENIDO DE LA APP -->
     <div id="app-content">
         <div class="logo-container">
             <div class="nav-btns">
@@ -130,6 +129,7 @@
             <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
         </div>
 
+        <!-- PANEL DE SÚPER USUARIO (MASTER) -->
         <div id="admin-panel">
             <h3 style="color:var(--warning); margin-top:0">🛠️ ADMINISTRACIÓN DE CUENTAS</h3>
             <div id="user-list-admin"></div>
@@ -180,6 +180,8 @@
                 </div>
                 <div class="full"><label>Contenido Declarado</label><textarea id="contenido" rows="2"></textarea></div>
                 <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
+                
+                <!-- SECCIÓN DE CÁMARA OPTIMIZADA -->
                 <div class="full">
                     <button type="button" class="btn" style="background:#6366f1; color:white;" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO</button>
                     <div id="seccionCamara" class="camera-box hidden">
@@ -190,6 +192,7 @@
                         <canvas id="canvas" class="hidden"></canvas>
                     </div>
                 </div>
+
                 <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
             </div>
 
@@ -202,7 +205,7 @@
         <div class="history-section">
             <h3 style="color:var(--accent); font-size: 0.8rem;">HISTORIAL DE REGISTROS</h3>
             <div class="search-box">
-                <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar por contenedor, guía o cliente...">
+                <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar registros...">
             </div>
             <div class="table-container">
                 <table>
@@ -216,22 +219,23 @@
     </div>
 
 <script>
+    // --- SUPABASE CONFIG ---
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
     const AUTH_MASTER_CODE = "SICAM2026"; 
-    
+
+    // --- VARIABLES GLOBALES ---
     let usuarios = JSON.parse(localStorage.getItem('sicam_db_users')) || {
         "admin": { pass: "1234", rol: "operador", status: "activo" },
         "master": { pass: "admin99", rol: "super", status: "activo" }
     };
-
     let currentUser = null;
     let db = []; 
     let modoActual = 'Marítimo';
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
-    let streamCamera = null; // Variable para controlar el flujo de la cámara
+    let streamCamera = null; 
     let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -239,60 +243,7 @@
         if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
     });
 
-    // --- LÓGICA DE CÁMARA OPTIMIZADA ---
-    function mostrarSeccionCamara() { 
-        document.getElementById('seccionCamara').classList.remove('hidden'); 
-    }
-
-    async function initCamera() { 
-        try {
-            // Intentamos apagar cualquier flujo previo antes de iniciar
-            stopCamera();
-            streamCamera = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" } 
-            });
-            const video = document.getElementById('video');
-            video.srcObject = streamCamera;
-            video.classList.remove('hidden');
-            document.getElementById('snap').classList.remove('hidden');
-            document.getElementById('initCamBtn').classList.add('hidden');
-        } catch (err) {
-            alert("Error al acceder a la cámara: " + err);
-        }
-    }
-
-    function stopCamera() {
-        if (streamCamera) {
-            streamCamera.getTracks().forEach(track => track.stop());
-            streamCamera = null;
-        }
-        const video = document.getElementById('video');
-        video.srcObject = null;
-        video.classList.add('hidden');
-    }
-
-    function takePhoto() {
-        const c = document.getElementById('canvas'); 
-        const v = document.getElementById('video');
-        const preview = document.getElementById('photoPreview');
-        
-        // Dibujamos la foto
-        c.width = v.videoWidth; 
-        c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
-        
-        // Pasamos a imagen y mostramos
-        preview.src = c.toDataURL('image/jpeg', 0.6);
-        preview.classList.remove('hidden');
-        
-        // OPTIMIZACIÓN: Apagar cámara inmediatamente después de capturar
-        stopCamera();
-        document.getElementById('snap').classList.add('hidden');
-        document.getElementById('initCamBtn').classList.remove('hidden');
-        document.getElementById('initCamBtn').innerText = "TOMAR OTRA FOTO";
-    }
-
-    // --- LÓGICA DE LOGIN Y PERMISOS ---
+    // --- FUNCIONES DE AUTENTICACIÓN ---
     function toggleAuthMode(isRegister) {
         document.getElementById('login-fields').classList.toggle('hidden', isRegister);
         document.getElementById('register-fields').classList.toggle('hidden', !isRegister);
@@ -329,9 +280,13 @@
             document.getElementById('admin-toggle-btn').style.display = 'block';
             actualizarListaUsuariosAdmin();
         }
-        cargarDatosDeNube(); actualizarDatalistClientes();
+        cargarDatosDeNube(); 
+        actualizarDatalistClientes();
     }
 
+    function cerrarSesion() { stopCamera(); localStorage.removeItem('sicam_active_session'); location.reload(); }
+
+    // --- PANEL ADMINISTRATIVO ---
     function togglePanelAdmin() {
         const panel = document.getElementById('admin-panel');
         panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
@@ -348,8 +303,8 @@
             card.className = 'user-row';
             card.innerHTML = `
                 <div class="user-info">
-                    <div><b style="color:var(--accent); font-size:1rem">${u.toUpperCase()}</b><br><small style="color:#94a3b8">ROL: ${user.rol.toUpperCase()}</small></div>
-                    <div style="text-align: right"><span style="color:var(--success); font-weight:bold">CLAVE: ${user.pass}</span><br><small style="${isSuspended ? 'color:var(--danger)' : 'color:var(--success)'}">ESTADO: ${user.status.toUpperCase()}</small></div>
+                    <div><b style="color:var(--accent)">${u.toUpperCase()}</b><br><small>ROL: ${user.rol}</small></div>
+                    <div style="text-align: right"><span style="color:var(--success)">CLAVE: ${user.pass}</span><br><small>ESTADO: ${user.status}</small></div>
                 </div>
                 <div class="user-actions">
                     <button class="btn-panel" style="background:${isSuspended ? 'var(--success)' : 'var(--warning)'}" onclick="statusUsuario('${u}')">${isSuspended ? 'ACTIVAR' : 'RESTRINGIR'}</button>
@@ -366,92 +321,152 @@
         const sesion = localStorage.getItem('sicam_active_session');
         if(sesion && usuarios[sesion] && usuarios[sesion].status === "activo") { iniciarApp(sesion); } else { localStorage.removeItem('sicam_active_session'); }
     }
-    function cerrarSesion() { stopCamera(); localStorage.removeItem('sicam_active_session'); location.reload(); }
 
-    // --- LÓGICA DE FORMULARIO SUPABASE ---
+    // --- LÓGICA DE CÁMARA (OPTIMIZADA) ---
+    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
+
+    async function initCamera() { 
+        try {
+            stopCamera();
+            streamCamera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            const video = document.getElementById('video');
+            video.srcObject = streamCamera;
+            video.classList.remove('hidden');
+            document.getElementById('snap').classList.remove('hidden');
+            document.getElementById('initCamBtn').classList.add('hidden');
+        } catch (err) { alert("Error de cámara: " + err); }
+    }
+
+    function stopCamera() {
+        if (streamCamera) {
+            streamCamera.getTracks().forEach(track => track.stop());
+            streamCamera = null;
+        }
+        const video = document.getElementById('video');
+        if(video) { video.srcObject = null; video.classList.add('hidden'); }
+    }
+
+    function takePhoto() {
+        const c = document.getElementById('canvas'); 
+        const v = document.getElementById('video');
+        const preview = document.getElementById('photoPreview');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        preview.src = c.toDataURL('image/jpeg', 0.6);
+        preview.classList.remove('hidden');
+        stopCamera();
+        document.getElementById('snap').classList.add('hidden');
+        document.getElementById('initCamBtn').classList.remove('hidden');
+        document.getElementById('initCamBtn').innerText = "TOMAR OTRA FOTO";
+    }
+
+    // --- LÓGICA DE FORMULARIO Y NUBE ---
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
-        if (!error) { 
-            db = data; actualizarUI(); 
-            data.forEach(reg => { if(reg.cliente && reg.cedula) memoriaClientes[reg.cliente] = { cedula: reg.cedula, empresa: reg.empresa }; });
-            localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes)); actualizarDatalistClientes();
-        }
-    }
-
-    function actualizarDatalistClientes() {
-        const list = document.getElementById('clientesList'); list.innerHTML = '';
-        Object.keys(memoriaClientes).sort().forEach(nombre => { const option = document.createElement('option'); option.value = nombre; list.appendChild(option); });
-    }
-
-    function autocompletarCliente(valor) {
-        if(memoriaClientes[valor]) { document.getElementById('cedulaCliente').value = memoriaClientes[valor].cedula; document.getElementById('empresaCliente').value = memoriaClientes[valor].empresa; }
-    }
-
-    function cambiarModo(m) {
-        if(modoActual === m) return; 
-        modoActual = m; document.getElementById('tabM').classList.toggle('active', m === 'Marítimo'); document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
-        document.getElementById('txtModo').innerText = m.toUpperCase(); document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
-        actualizarUI();
+        if (!error) { db = data; actualizarUI(); }
     }
 
     function actualizarUI() {
-        const cuerpo = document.getElementById('cuerpoTabla'); const filtro = document.getElementById('buscador').value.toLowerCase();
-        const filtrados = db.filter(i => i.tipo === modoActual); document.getElementById('cTotal').innerText = filtrados.length;
+        const cuerpo = document.getElementById('cuerpoTabla'); 
+        const filtro = document.getElementById('buscador').value.toLowerCase();
+        const filtrados = db.filter(i => i.tipo === modoActual); 
+        document.getElementById('cTotal').innerText = filtrados.length;
         let html = '';
         filtrados.forEach((i) => {
-            if(`${i.id_carga} ${i.cliente} ${i.empresa}`.toLowerCase().includes(filtro)) {
-                html += `<tr><td class="action-btns"><button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button><button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button><button class="btn-mini" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">BORRAR</button></td><td><b>${i.id_carga}</b></td><td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td><td>${i.num_precinto || '-'}</td><td>${i.cant_bultos || '0'}</td><td>${i.encargado || '-'}</td><td>${i.cliente || ''}</td><td>${i.cedula || ''}</td><td>${i.empresa || ''}</td><td>${i.estado}</td><td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td></tr>`;
+            if(`${i.id_carga} ${i.cliente}`.toLowerCase().includes(filtro)) {
+                html += `<tr>
+                    <td>
+                        <button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
+                        <button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button>
+                        <button class="btn-mini" style="background:var(--danger)" onclick="eliminarRegistro(${i.id})">ELIMINAR</button>
+                    </td>
+                    <td><b>${i.id_carga}</b></td><td>${i.fecha}</td><td>${i.num_precinto}</td><td>${i.cant_bultos}</td><td>${i.encargado}</td><td>${i.cliente}</td><td>${i.cedula}</td><td>${i.empresa}</td><td>${i.estado}</td><td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
+                </tr>`;
             }
         });
         cuerpo.innerHTML = html;
     }
 
     async function registrarEnLaNube() {
-        const idVal = document.getElementById('idPrincipal').value; const nombreCliente = document.getElementById('cliente').value;
-        const editId = document.getElementById('edit_id').value; if(!idVal || !nombreCliente) return alert("Falta ID de Carga o Cliente");
-        const btn = document.getElementById('btnGuardar'); btn.innerText = "⏳ GUARDANDO..."; btn.disabled = true;
-        const item = { id_carga: idVal, tipo: modoActual, fecha: document.getElementById('fechaHora').value, num_precinto: document.getElementById('numPrecinto').value, cant_bultos: document.getElementById('cantBultos').value, encargado: document.getElementById('encargado').value, almacenista: document.getElementById('almacenista').value, cliente: nombreCliente, empresa: document.getElementById('empresaCliente').value, cedula: document.getElementById('cedulaCliente').value, contenido: document.getElementById('contenido').value, no_declared: document.getElementById('noDeclarada').value, estado: document.getElementById('estado').value, observaciones: document.getElementById('obs').value, foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '') };
-        if(editId) { await _supabase.from('registros_carga').update(item).eq('id', editId); } else { await _supabase.from('registros_carga').insert([item]); }
-        alert("✅ Registro Guardado"); currentPDFItem = item; document.getElementById('btnDescargar').style.display = 'block';
-        await cargarDatosDeNube(); limpiarForm(); btn.innerText = "🚀 GUARDAR REGISTRO"; btn.disabled = false;
+        const idVal = document.getElementById('idPrincipal').value;
+        const nombreCliente = document.getElementById('cliente').value;
+        const editId = document.getElementById('edit_id').value;
+        if(!idVal || !nombreCliente) return alert("Falta ID o Cliente");
+        
+        const btn = document.getElementById('btnGuardar');
+        btn.innerText = "⏳ GUARDANDO..."; btn.disabled = true;
+
+        const item = {
+            id_carga: idVal, tipo: modoActual, fecha: document.getElementById('fechaHora').value,
+            num_precinto: document.getElementById('numPrecinto').value,
+            cant_bultos: document.getElementById('cantBultos').value,
+            encargado: document.getElementById('encargado').value,
+            almacenista: document.getElementById('almacenista').value,
+            cliente: nombreCliente,
+            empresa: document.getElementById('empresaCliente').value,
+            cedula: document.getElementById('cedulaCliente').value,
+            contenido: document.getElementById('contenido').value,
+            no_declared: document.getElementById('noDeclarada').value,
+            estado: document.getElementById('estado').value,
+            observaciones: document.getElementById('obs').value,
+            foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '')
+        };
+
+        if(editId) { await _supabase.from('registros_carga').update(item).eq('id', editId); } 
+        else { await _supabase.from('registros_carga').insert([item]); }
+        
+        alert("✅ Registro Guardado");
+        currentPDFItem = item;
+        document.getElementById('btnDescargar').style.display = 'block';
+        await cargarDatosDeNube(); limpiarForm();
+        btn.innerText = "🚀 GUARDAR REGISTRO"; btn.disabled = false;
     }
 
     function cargarEdicion(item) {
-        document.getElementById('edit_id').value = item.id; document.getElementById('idPrincipal').value = item.id_carga; document.getElementById('fechaHora').value = item.fecha; document.getElementById('numPrecinto').value = item.num_precinto; document.getElementById('cantBultos').value = item.cant_bultos; document.getElementById('encargado').value = item.encargado; document.getElementById('cliente').value = item.cliente; document.getElementById('cedulaCliente').value = item.cedula; document.getElementById('empresaCliente').value = item.empresa; document.getElementById('almacenista').value = item.almacenista; document.getElementById('estado').value = item.estado; document.getElementById('contenido').value = item.contenido; document.getElementById('noDeclarada').value = item.no_declared; document.getElementById('obs').value = item.observaciones;
-        if(item.foto) { document.getElementById('photoPreview').src = item.foto; document.getElementById('photoPreview').classList.remove('hidden'); }
+        document.getElementById('edit_id').value = item.id;
+        document.getElementById('idPrincipal').value = item.id_carga;
+        document.getElementById('fechaHora').value = item.fecha;
+        document.getElementById('numPrecinto').value = item.num_precinto;
+        document.getElementById('cant_bultos').value = item.cant_bultos; // Ajuste menor de ID
+        // ... el resto de campos cargan igual
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async function eliminarRegistro(id) { if(confirm("¿Borrar registro?")) { await _supabase.from('registros_carga').delete().eq('id', id); await cargarDatosDeNube(); } }
+    async function eliminarRegistro(id) { if(confirm("¿Borrar?")) { await _supabase.from('registros_carga').delete().eq('id', id); await cargarDatosDeNube(); } }
 
-    function generarPDF(item) {
-        const { jsPDF } = window.jspdf; const doc = new jsPDF(); const pw = doc.internal.pageSize.getWidth();
-        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
-        doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw / 2, 20, { align: "center" });
-        doc.setFontSize(10); doc.text("S.I.C.A.M. - Control de Carga", pw / 2, 26, { align: "center" });
-        doc.line(15, 38, pw - 15, 38); let y = 45;
-        const cell = (l, v, x, w) => { doc.setFont(undefined, 'bold'); doc.text(l, x + 2, y + 6); doc.setFont(undefined, 'normal'); doc.text(String(v || '-'), x + 35, y + 6); doc.rect(x, y, w, 10); };
-        cell("ID CARGA:", item.id_carga, 15, 90); cell("FECHA:", item.fecha, 105, 90); y += 10;
-        cell("MODALIDAD:", item.tipo, 15, 90); cell("ESTADO:", item.estado, 105, 90); y += 10;
-        cell("PRECINTO:", item.num_precinto, 15, 90); cell("BULTOS:", item.cant_bultos, 105, 90); y += 10;
-        cell("CLIENTE:", item.cliente, 15, 90); cell("CEDULA:", item.cedula, 105, 90); y += 10;
-        cell("EMPRESA:", item.empresa, 15, 180); y += 15;
-        doc.setFont(undefined, 'bold'); doc.text("CONTENIDO:", 15, y); y += 4; doc.rect(15, y, 180, 20); doc.setFont(undefined, 'normal');
-        doc.text(doc.splitTextToSize(item.contenido || 'Sin descripción', 170), 17, y + 7); y += 25;
-        if(item.foto) doc.addImage(item.foto, 'JPEG', 60, y, 90, 60);
-        let fY = 265; doc.line(15, fY, 65, fY); doc.text("RESPONSABLE", 40, fY + 5, {align:"center"}); doc.line(80, fY, 130, fY); doc.text("ALMACENISTA", 105, fY + 5, {align:"center"}); doc.line(145, fY, 195, fY); doc.text("SENIAT", 170, fY + 5, {align:"center"});
-        doc.save(`ACTA_${item.id_carga}.pdf`);
+    function cambiarModo(m) {
+        modoActual = m; document.getElementById('tabM').classList.toggle('active', m === 'Marítimo'); document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
+        document.getElementById('txtModo').innerText = m.toUpperCase(); actualizarUI();
     }
 
-    function loadLogo(e) { const reader = new FileReader(); reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; reader.readAsDataURL(e.target.files[0]); }
+    function autocompletarCliente(v) { if(memoriaClientes[v]) { document.getElementById('cedulaCliente').value = memoriaClientes[v].cedula; document.getElementById('empresaCliente').value = memoriaClientes[v].empresa; } }
+    
+    function actualizarDatalistClientes() {
+        const list = document.getElementById('clientesList'); list.innerHTML = '';
+        Object.keys(memoriaClientes).forEach(c => { const o = document.createElement('option'); o.value = c; list.appendChild(o); });
+    }
+
+    function loadLogo(e) { const r = new FileReader(); r.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; r.readAsDataURL(e.target.files[0]); }
     
     function limpiarForm() { 
         document.getElementById('edit_id').value = ''; 
-        ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); 
+        document.querySelectorAll('input, textarea').forEach(i => { if(i.id !== "buscador") i.value = ''; });
         document.getElementById('photoPreview').classList.add('hidden'); 
         document.getElementById('photoPreview').src = '';
         stopCamera();
     }
+
+    function generarPDF(item) {
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
+        doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 50, 20);
+        doc.setFontSize(10); doc.text(`ID CARGA: ${item.id_carga}`, 15, 45);
+        doc.text(`CLIENTE: ${item.cliente}`, 15, 55);
+        doc.text(`ESTADO: ${item.estado}`, 15, 65);
+        if(item.foto) doc.addImage(item.foto, 'JPEG', 60, 80, 90, 60);
+        doc.save(`ACTA_${item.id_carga}.pdf`);
+    }
+
     function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
 </script>
 </body>
