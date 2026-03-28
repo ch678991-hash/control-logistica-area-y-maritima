@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.I.C.A.M. Elite - Pro Edition</title>
+    <title>S.C.C.A.M. Elite - Pro Edition</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -40,9 +40,6 @@
         label { display: block; font-weight: 800; font-size: 0.7rem; margin-bottom: 5px; color: #334155; text-transform: uppercase; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; font-family: inherit; }
         
-        /* Estilo para el buscador con flechita */
-        .autocomplete-wrapper { position: relative; }
-
         .camera-box { background: #f1f5f9; padding: 15px; border-radius: 12px; border: 2px solid #cbd5e1; margin-top: 10px; text-align: center; }
         .hidden { display: none !important; }
         #video, #photoPreview { width: 100%; border-radius: 10px; margin-top: 10px; border: 2px solid #94a3b8; max-width: 320px; }
@@ -93,10 +90,9 @@
             <div><label>Cantidad de Bultos</label><input type="number" id="cantBultos"></div>
             <div class="full"><label>Personas Encargadas / Responsables</label><input type="text" id="encargado"></div>
             
-            <!-- CLIENTE CON AUTOCOMPLETADO -->
-            <div class="autocomplete-wrapper">
+            <div class="full">
                 <label>Cliente (Buscar o escribir)</label>
-                <input type="text" id="cliente" list="clientesList" oninput="autocompletarCliente(this.value)" placeholder="Escriba nombre...">
+                <input type="text" id="cliente" list="clientesList" oninput="autocompletarCliente(this.value)" placeholder="▼ Seleccione o escriba el nombre del cliente">
                 <datalist id="clientesList"></datalist>
             </div>
             
@@ -170,8 +166,6 @@
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let stream;
-
-    // Memoria de clientes
     let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
 
     if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
@@ -186,7 +180,6 @@
         if (!error) { 
             db = data; 
             actualizarUI(); 
-            // Sincronizar memoria de clientes con datos de la nube
             data.forEach(reg => {
                 if(reg.cliente && reg.cedula) {
                     memoriaClientes[reg.cliente] = { cedula: reg.cedula, empresa: reg.empresa };
@@ -214,14 +207,57 @@
         }
     }
 
+    // ARREGLO DEL BUG DE PESTAÑAS
     function cambiarModo(m) {
-        if(modoActual === m) return;
+        if(modoActual === m) return; 
+        
         modoActual = m;
+        
+        // UI
         document.getElementById('tabM').classList.toggle('active', m === 'Marítimo');
         document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
         document.getElementById('txtModo').innerText = m.toUpperCase();
         document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
+        
+        // Limpiar tabla antes de recargar
+        document.getElementById('cuerpoTabla').innerHTML = '';
+        
+        // Resetear buscador para evitar conflictos
+        document.getElementById('buscador').value = '';
+        
         actualizarUI();
+    }
+
+    function actualizarUI() {
+        const cuerpo = document.getElementById('cuerpoTabla');
+        const filtro = document.getElementById('buscador').value.toLowerCase();
+        
+        const filtrados = db.filter(i => i.tipo === modoActual);
+        document.getElementById('cTotal').innerText = filtrados.length;
+        
+        let html = '';
+        filtrados.forEach((i) => {
+            if(`${i.id_carga} ${i.cliente} ${i.empresa}`.toLowerCase().includes(filtro)) {
+                html += `<tr>
+                    <td class="action-btns">
+                        <button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
+                        <button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button>
+                        <button class="btn-mini" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">BORRAR</button>
+                    </td>
+                    <td><b>${i.id_carga}</b></td>
+                    <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
+                    <td style="color:var(--accent)">${i.num_precinto || '-'}</td>
+                    <td>${i.cant_bultos || '0'}</td>
+                    <td>${i.encargado || '-'}</td>
+                    <td>${i.cliente || ''}</td>
+                    <td>${i.cedula || ''}</td>
+                    <td>${i.empresa || ''}</td>
+                    <td>${i.estado}</td>
+                    <td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
+                </tr>`;
+            }
+        });
+        cuerpo.innerHTML = html;
     }
 
     async function registrarEnLaNube() {
@@ -251,7 +287,6 @@
             foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '')
         };
 
-        // Guardar cliente en memoria local
         memoriaClientes[nombreCliente] = { cedula: item.cedula, empresa: item.empresa };
         localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes));
 
@@ -263,7 +298,7 @@
         }
 
         if (!res.error) {
-            alert("✅ Éxito");
+            alert("✅ Guardado");
             currentPDFItem = item;
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
@@ -274,35 +309,6 @@
         }
         btn.innerText = "🚀 SUBIR REGISTRO A LA NUBE";
         btn.disabled = false;
-    }
-
-    function actualizarUI() {
-        const cuerpo = document.getElementById('cuerpoTabla');
-        const filtro = document.getElementById('buscador').value.toLowerCase();
-        const filtrados = db.filter(i => i.tipo === modoActual);
-        document.getElementById('cTotal').innerText = filtrados.length;
-        cuerpo.innerHTML = '';
-        filtrados.forEach((i) => {
-            if(`${i.id_carga} ${i.cliente} ${i.empresa}`.toLowerCase().includes(filtro)) {
-                cuerpo.innerHTML += `<tr>
-                    <td class="action-btns">
-                        <button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
-                        <button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button>
-                        <button class="btn-mini" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">BORRAR</button>
-                    </td>
-                    <td><b>${i.id_carga}</b></td>
-                    <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
-                    <td style="color:var(--accent)">${i.num_precinto || '-'}</td>
-                    <td>${i.cant_bultos || '0'}</td>
-                    <td>${i.encargado || '-'}</td>
-                    <td>${i.cliente || ''}</td>
-                    <td>${i.cedula || ''}</td>
-                    <td>${i.empresa || ''}</td>
-                    <td>${i.estado}</td>
-                    <td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
-                </tr>`;
-            }
-        });
     }
 
     function cargarEdicion(item) {
@@ -342,21 +348,21 @@
         if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
         doc.setFont("helvetica", "bold"); doc.setFontSize(16);
         doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw / 2, 20, { align: "center" });
-        doc.setFontSize(10); doc.text("S.I.C.A.M.", pw / 2, 26, { align: "center" });
+        doc.setFontSize(10); doc.text("S.C.C.A.M. ELITE PRO", pw / 2, 26, { align: "center" });
         doc.line(15, 38, pw - 15, 38);
         let y = 45;
-        const drawCell = (l, v, x, w) => {
+        const cell = (l, v, x, w) => {
             doc.setFont(undefined, 'bold'); doc.text(l, x + 2, y + 6);
             doc.setFont(undefined, 'normal'); doc.text(String(v || '-'), x + 35, y + 6);
             doc.rect(x, y, w, 10);
         };
-        drawCell("ID CARGA:", item.id_carga, 15, 90); drawCell("FECHA:", item.fecha, 105, 90); y += 10;
-        drawCell("MODALIDAD:", item.tipo, 15, 90); drawCell("ESTADO:", item.estado, 105, 90); y += 10;
-        drawCell("PRECINTO:", item.num_precinto, 15, 90); drawCell("BULTOS:", item.cant_bultos, 105, 90); y += 10;
-        drawCell("CLIENTE:", item.cliente, 15, 90); drawCell("CEDULA:", item.cedula, 105, 90); y += 10;
-        drawCell("EMPRESA:", item.empresa, 15, 180); y += 15;
+        cell("ID CARGA:", item.id_carga, 15, 90); cell("FECHA:", item.fecha, 105, 90); y += 10;
+        cell("MODALIDAD:", item.tipo, 15, 90); cell("ESTADO:", item.estado, 105, 90); y += 10;
+        cell("PRECINTO:", item.num_precinto, 15, 90); cell("BULTOS:", item.cant_bultos, 105, 90); y += 10;
+        cell("CLIENTE:", item.cliente, 15, 90); cell("CEDULA:", item.cedula, 105, 90); y += 10;
+        cell("EMPRESA:", item.empresa, 15, 180); y += 15;
         doc.setFont(undefined, 'bold'); doc.text("CONTENIDO:", 15, y); y += 4;
-        doc.setFont(undefined, 'normal'); doc.rect(15, y, 180, 20);
+        doc.rect(15, y, 180, 20); doc.setFont(undefined, 'normal');
         doc.text(doc.splitTextToSize(item.contenido || 'Sin descripción', 170), 17, y + 7); y += 25;
         if(item.foto) doc.addImage(item.foto, 'JPEG', 60, y, 90, 60);
         let fY = 265;
@@ -366,4 +372,33 @@
         doc.save(`ACTA_${item.id_carga}.pdf`);
     }
 
-    // Otra
+    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
+    async function initCamera() { 
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        document.getElementById('video').srcObject = stream;
+        document.getElementById('video').classList.remove('hidden');
+        document.getElementById('snap').classList.remove('hidden');
+    }
+    function takePhoto() {
+        const c = document.getElementById('canvas'); const v = document.getElementById('video');
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.6);
+        document.getElementById('photoPreview').classList.remove('hidden');
+        if(stream) stream.getTracks().forEach(t => t.stop());
+    }
+    function loadLogo(e) {
+        const reader = new FileReader();
+        reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+    function limpiarForm() {
+        document.getElementById('edit_id').value = '';
+        ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('photoPreview').classList.add('hidden');
+        document.getElementById('btnGuardar').innerText = "🚀 SUBIR REGISTRO A LA NUBE";
+    }
+    function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
+</script>
+</body>
+</html>
