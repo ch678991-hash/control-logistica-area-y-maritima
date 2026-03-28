@@ -21,20 +21,20 @@
         #auth-container {
             position: fixed; top:0; left:0; width: 100%; height: 100%;
             background: var(--bg); display: flex; align-items: center; justify-content: center;
-            z-index: 9999; transition: 0.5s;
+            z-index: 9999;
         }
         .auth-card {
             background: var(--card); padding: 30px; border-radius: 20px;
             width: 90%; max-width: 400px; border: 1px solid var(--border);
             box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center;
         }
-        .auth-card h2 { color: var(--accent); margin-top: 0; }
+        .auth-card h2 { color: var(--accent); margin-top: 0; font-size: 1.2rem; }
         .auth-card input { 
             background: #0f172a; border: 1px solid var(--border); color: white;
-            margin-bottom: 15px; padding: 15px; width: 100%; border-radius: 10px;
+            margin-bottom: 15px; padding: 15px; width: 100%; border-radius: 10px; font-size: 1rem;
         }
         .btn-auth { background: var(--accent); color: #0f172a; border:none; padding:15px; border-radius:10px; font-weight:bold; width:100%; cursor:pointer; }
-        .toggle-auth { color: var(--accent); font-size: 0.8rem; cursor: pointer; margin-top: 15px; display: block; }
+        .toggle-auth { color: var(--accent); font-size: 0.8rem; cursor: pointer; margin-top: 15px; display: block; text-decoration: underline; }
         
         /* --- APP STYLES --- */
         #app-content { display: none; }
@@ -42,7 +42,7 @@
         .logo-container { text-align: center; margin-bottom: 10px; position: relative; }
         .nav-btns { position: absolute; right: 10px; top: 10px; display: flex; gap: 5px; }
         .logout-btn { background: var(--danger); border:none; color:white; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem; cursor:pointer;}
-        .admin-btn { background: var(--warning); border:none; color:white; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem; cursor:pointer; display: none; }
+        #admin-toggle-btn { background: var(--warning); border:none; color:white; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem; cursor:pointer; display: none; }
         
         .logo-placeholder { width: 90px; height: 90px; border: 2px dashed var(--accent); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #1e293b; cursor: pointer; overflow: hidden; }
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
@@ -50,11 +50,11 @@
         .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
         .header-app h1 { font-size: 1.1rem; color: var(--accent); margin: 0; text-transform: uppercase; }
 
-        /* --- SECCIÓN ADMIN --- */
+        /* --- PANEL SUPER USUARIO --- */
         #admin-panel { background: #1e293b; border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 2px solid var(--warning); display: none; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
 
-        /* Resto de estilos originales se mantienen */
+        /* Dashboard y Formulario */
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
         .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
         .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; }
@@ -98,19 +98,19 @@
     <!-- PANTALLA DE LOGIN -->
     <div id="auth-container">
         <div class="auth-card">
-            <h2 id="auth-title">S.I.C.A.M. LOGIN</h2>
+            <h2 id="auth-title">S.I.C.A.M. ACCESO</h2>
             <div id="login-fields">
-                <input type="text" id="user-input" placeholder="Usuario">
+                <input type="text" id="user-input" placeholder="Usuario" autocomplete="off">
                 <input type="password" id="pass-input" placeholder="Contraseña">
-                <button class="btn-auth" onclick="manejarAuth()">INGRESAR</button>
-                <span class="toggle-auth" onclick="toggleAuthMode(true)">¿No tienes cuenta? Regístrate</span>
+                <button class="btn-auth" onclick="manejarAuth()">ENTRAR AL SISTEMA</button>
+                <span class="toggle-auth" onclick="toggleAuthMode(true)">¿Eres nuevo? Regístrate aquí</span>
             </div>
             <div id="register-fields" class="hidden">
-                <input type="text" id="reg-user" placeholder="Nuevo Usuario">
-                <input type="password" id="reg-pass" placeholder="Nueva Contraseña">
-                <input type="password" id="reg-master" placeholder="Código Maestro (Autorización)">
+                <input type="text" id="reg-user" placeholder="Crea tu Usuario">
+                <input type="password" id="reg-pass" placeholder="Crea tu Contraseña">
+                <input type="password" id="reg-master" placeholder="Código de Autorización">
                 <button class="btn-auth" style="background:var(--success)" onclick="registrarUsuario()">CREAR CUENTA</button>
-                <span class="toggle-auth" onclick="toggleAuthMode(false)">Volver al Login</span>
+                <span class="toggle-auth" onclick="toggleAuthMode(false)">Ya tengo cuenta, volver</span>
             </div>
         </div>
     </div>
@@ -119,7 +119,7 @@
     <div id="app-content">
         <div class="logo-container">
             <div class="nav-btns">
-                <button id="admin-toggle-btn" class="admin-btn" onclick="togglePanelAdmin()">⚙️ PANEL ADMIN</button>
+                <button id="admin-toggle-btn" onclick="togglePanelAdmin()">⚙️ CONTROL MAESTRO</button>
                 <button class="logout-btn" onclick="cerrarSesion()">SALIR</button>
             </div>
             <div class="logo-placeholder" id="logoDisplay" onclick="document.getElementById('logoInput').click()">
@@ -128,24 +128,23 @@
             <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
         </div>
 
-        <!-- PANEL DE SUPER USUARIO (OCULTO POR DEFECTO) -->
+        <!-- PANEL DE SÚPER USUARIO -->
         <div id="admin-panel">
-            <h3 style="color:var(--warning); margin-top:0">🛠️ ADMINISTRACIÓN DE USUARIOS</h3>
-            <div id="user-list">
-                <!-- Aquí se cargan los usuarios dinámicamente -->
-            </div>
-            <button class="btn" style="background:var(--border); margin-top:15px; color:white" onclick="togglePanelAdmin()">CERRAR PANEL</button>
+            <h3 style="color:var(--warning); margin-top:0">🛠️ PANEL DE SÚPER USUARIO</h3>
+            <p style="font-size: 0.7rem; color: #94a3b8;">Gestión de cuentas y auditoría de contraseñas:</p>
+            <div id="user-list"></div>
+            <button class="btn" style="background:var(--border); margin-top:15px; color:white; height:40px; padding:0" onclick="togglePanelAdmin()">CERRAR PANEL</button>
         </div>
 
         <div class="header-app">
             <h1>SISTEMA DE CONTROL DE CARGA</h1>
-            <small id="welcome-user" style="color: var(--accent)"></small>
+            <small id="welcome-user" style="color: var(--accent); font-weight: bold;"></small>
         </div>
 
-        <!-- Dashboard y Formulario (Sin cambios en funcionalidad) -->
+        <!-- Dashboard Estadístico -->
         <div class="dashboard">
-            <div class="stat-card"><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
-            <div class="stat-card"><h4>MODO</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
+            <div class="stat-card"><h4>TOTAL REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
+            <div class="stat-card"><h4>MODO ACTIVO</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
         </div>
 
         <div class="tabs">
@@ -160,11 +159,11 @@
                 <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
                 <div><label>N° de Precinto</label><input type="text" id="numPrecinto"></div>
                 <div><label>Cantidad de Bultos</label><input type="number" id="cantBultos"></div>
-                <div class="full"><label>Personas Encargadas / Responsables</label><input type="text" id="encargado"></div>
+                <div class="full"><label>Responsable de Carga</label><input type="text" id="encargado"></div>
                 
                 <div class="full">
-                    <label>Cliente (Buscar o escribir)</label>
-                    <input type="text" id="cliente" list="clientesList" oninput="autocompletarCliente(this.value)" placeholder="▼ Seleccione o escriba el nombre del cliente">
+                    <label>Cliente</label>
+                    <input type="text" id="cliente" list="clientesList" oninput="autocompletarCliente(this.value)">
                     <datalist id="clientesList"></datalist>
                 </div>
                 
@@ -196,7 +195,7 @@
             </div>
 
             <div class="actions">
-                <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 SUBIR REGISTRO A LA NUBE</button>
+                <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 GUARDAR REGISTRO</button>
                 <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ GENERAR ACTA PDF</button>
             </div>
         </div>
@@ -204,7 +203,7 @@
         <div class="history-section">
             <h3 style="color:var(--accent); font-size: 0.8rem;">HISTORIAL DE REGISTROS</h3>
             <div class="search-box">
-                <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar registros...">
+                <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar por contenedor, guía o cliente...">
             </div>
             <div class="table-container">
                 <table>
@@ -215,7 +214,7 @@
                             <th>Fecha</th>
                             <th>Precinto</th>
                             <th>Bultos</th>
-                            <th>Responsables</th>
+                            <th>Responsable</th>
                             <th>Cliente</th>
                             <th>Cédula</th>
                             <th>Empresa</th>
@@ -230,46 +229,53 @@
     </div>
 
 <script>
+    // --- SUPABASE CONFIG ---
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
+    // --- SEGURIDAD Y USUARIOS ---
+    const AUTH_MASTER_CODE = "SICAM2026"; // Para nuevos registros
+    
+    // USUARIOS INICIALES (Si no existen en LocalStorage)
+    let usuarios = JSON.parse(localStorage.getItem('sicam_db_users')) || {
+        "acmi": { pass: "1234", rol: "operador", status: "activo" },
+        "master": { pass: "admin99", rol: "super", status: "activo" }
+    };
+
+    let currentUser = null;
     let db = []; 
     let modoActual = 'Marítimo';
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let stream;
     let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
-    
-    // --- GESTIÓN DE USUARIOS MEJORADA ---
-    const MASTER_CODE = "SICAM2026"; 
-    // Los usuarios ahora guardan un objeto {pass, status}
-    let usuarios = JSON.parse(localStorage.getItem('sicam_users')) || { "admin": {pass: "1234", status: "activo"} };
 
     document.addEventListener('DOMContentLoaded', () => {
         verificarSesion();
         if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
     });
 
+    // --- SISTEMA DE LOGIN ---
     function toggleAuthMode(isRegister) {
         document.getElementById('login-fields').classList.toggle('hidden', isRegister);
         document.getElementById('register-fields').classList.toggle('hidden', !isRegister);
-        document.getElementById('auth-title').innerText = isRegister ? "NUEVO USUARIO" : "S.I.C.A.M. LOGIN";
+        document.getElementById('auth-title').innerText = isRegister ? "REGISTRO DE OPERADOR" : "S.I.C.A.M. ACCESO";
     }
 
     function manejarAuth() {
-        const u = document.getElementById('user-input').value.toLowerCase();
+        const u = document.getElementById('user-input').value.trim().toLowerCase();
         const p = document.getElementById('pass-input').value;
 
         if (usuarios[u]) {
-            if (usuarios[u].status === "suspendido") return alert("Esta cuenta ha sido suspendida por el Administrador.");
+            if (usuarios[u].status === "suspendido") return alert("Acceso denegado. Usuario suspendido.");
             if (usuarios[u].pass === p) {
                 iniciarApp(u);
             } else {
-                alert("Contraseña incorrecta");
+                alert("Contraseña incorrecta.");
             }
         } else {
-            alert("Usuario no existe");
+            alert("El usuario no existe.");
         }
     }
 
@@ -278,99 +284,99 @@
         const p = document.getElementById('reg-pass').value;
         const m = document.getElementById('reg-master').value;
 
-        if(!u || !p) return alert("Completa los campos");
-        if(m !== MASTER_CODE) return alert("Código Maestro incorrecto.");
-        if(usuarios[u]) return alert("El usuario ya existe.");
+        if(!u || !p) return alert("Faltan datos.");
+        if(m !== AUTH_MASTER_CODE) return alert("Código de Autorización Inválido.");
+        if(usuarios[u]) return alert("Este nombre de usuario ya está ocupado.");
         
-        usuarios[u] = { pass: p, status: "activo" };
+        usuarios[u] = { pass: p, rol: "operador", status: "activo" };
         guardarUsuarios();
-        alert("¡Usuario creado!");
+        alert("¡Registro Exitoso! Ahora puedes iniciar sesión.");
         toggleAuthMode(false);
     }
 
-    function iniciarApp(user) {
-        localStorage.setItem('sicam_session', user);
+    function iniciarApp(userKey) {
+        currentUser = usuarios[userKey];
+        localStorage.setItem('sicam_active_session', userKey);
+        
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
-        document.getElementById('welcome-user').innerText = `Operador: ${user.toUpperCase()}`;
+        document.getElementById('welcome-user').innerText = `BIENVENIDO: ${userKey.toUpperCase()}`;
         
-        // Mostrar botón de admin solo si es "admin"
-        if(user === "admin") {
+        // Habilitar botón de Súper Usuario solo si es el rol correspondiente
+        if(currentUser.rol === "super") {
             document.getElementById('admin-toggle-btn').style.display = 'block';
-            actualizarListaUsuarios();
+            actualizarListaUsuariosAdmin();
         }
 
         cargarDatosDeNube();
         actualizarDatalistClientes();
     }
 
-    // --- FUNCIONES DEL SÚPER USUARIO (ADMIN) ---
+    // --- PANEL DE CONTROL MAESTRO (SOLO SÚPER USUARIO) ---
     function togglePanelAdmin() {
         const panel = document.getElementById('admin-panel');
         panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
     }
 
-    function actualizarListaUsuarios() {
-        const container = document.getElementById('user-list');
-        container.innerHTML = '';
+    function actualizarListaUsuariosAdmin() {
+        const listDiv = document.getElementById('user-list');
+        listDiv.innerHTML = '';
         
-        Object.keys(usuarios).forEach(user => {
-            const row = document.createElement('div');
-            row.className = 'user-row';
-            const isSuspended = usuarios[user].status === "suspendido";
+        Object.keys(usuarios).forEach(u => {
+            const user = usuarios[u];
+            const div = document.createElement('div');
+            div.className = 'user-row';
+            const suspended = user.status === "suspendido";
             
-            row.innerHTML = `
+            div.innerHTML = `
                 <div>
-                    <b style="color:var(--accent)">${user.toUpperCase()}</b><br>
-                    <small style="color:#94a3b8">Pass: ${usuarios[user].pass}</small>
+                    <b style="color:var(--accent)">${u.toUpperCase()}</b> [${user.rol}]<br>
+                    <span style="color:var(--success)">Clave: ${user.pass}</span>
                 </div>
                 <div>
-                    <button onclick="toggleUserStatus('${user}')" style="background:${isSuspended ? 'var(--success)' : 'var(--warning)'}; border:none; padding:5px 8px; border-radius:5px; color:white; cursor:pointer">
-                        ${isSuspended ? 'Activar' : 'Suspender'}
+                    <button onclick="cambiarStatusUser('${u}')" style="background:${suspended ? 'var(--success)' : 'var(--warning)'}; border:none; color:white; padding:5px; border-radius:4px; cursor:pointer">
+                        ${suspended ? 'Habilitar' : 'Restringir'}
                     </button>
-                    ${user !== 'admin' ? `
-                        <button onclick="eliminarUsuario('${user}')" style="background:var(--danger); border:none; padding:5px 8px; border-radius:5px; color:white; cursor:pointer; margin-left:5px">
-                            Borrar
-                        </button>
-                    ` : ''}
+                    ${u !== 'master' ? `<button onclick="borrarUser('${u}')" style="background:var(--danger); border:none; color:white; padding:5px; border-radius:4px; cursor:pointer; margin-left:5px">Borrar</button>` : ''}
                 </div>
             `;
-            container.appendChild(row);
+            listDiv.appendChild(div);
         });
     }
 
-    function toggleUserStatus(user) {
-        usuarios[user].status = usuarios[user].status === "activo" ? "suspendido" : "activo";
+    function cambiarStatusUser(u) {
+        usuarios[u].status = usuarios[u].status === "activo" ? "suspendido" : "activo";
         guardarUsuarios();
-        actualizarListaUsuarios();
+        actualizarListaUsuariosAdmin();
     }
 
-    function eliminarUsuario(user) {
-        if(confirm(`¿Seguro que deseas eliminar al usuario ${user}?`)) {
-            delete usuarios[user];
+    function borrarUser(u) {
+        if(confirm(`¿Eliminar permanentemente al usuario ${u}?`)) {
+            delete usuarios[u];
             guardarUsuarios();
-            actualizarListaUsuarios();
+            actualizarListaUsuariosAdmin();
         }
     }
 
     function guardarUsuarios() {
-        localStorage.setItem('sicam_users', JSON.stringify(usuarios));
+        localStorage.setItem('sicam_db_users', JSON.stringify(usuarios));
     }
 
-    // --- RESTO DE FUNCIONALIDAD DEL SISTEMA ---
     function verificarSesion() {
-        const sesion = localStorage.getItem('sicam_session');
-        if(sesion && usuarios[sesion] && usuarios[sesion].status === "activo") {
-            iniciarApp(sesion);
+        const sesionGuardada = localStorage.getItem('sicam_active_session');
+        if(sesionGuardada && usuarios[sesionGuardada] && usuarios[sesionGuardada].status === "activo") {
+            iniciarApp(sesionGuardada);
         } else {
-            localStorage.removeItem('sicam_session');
+            localStorage.removeItem('sicam_active_session');
         }
     }
 
     function cerrarSesion() {
-        localStorage.removeItem('sicam_session');
+        localStorage.removeItem('sicam_active_session');
         location.reload();
     }
+
+    // --- LÓGICA DE FORMULARIO ---
 
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
@@ -450,10 +456,10 @@
         const nombreCliente = document.getElementById('cliente').value;
         const editId = document.getElementById('edit_id').value;
         
-        if(!idVal || !nombreCliente) return alert("Ingrese ID y Cliente");
+        if(!idVal || !nombreCliente) return alert("Falta ID de Carga o Cliente");
 
         const btn = document.getElementById('btnGuardar');
-        btn.innerText = "⏳ PROCESANDO...";
+        btn.innerText = "⏳ GUARDANDO...";
         btn.disabled = true;
 
         const item = {
@@ -480,15 +486,15 @@
         }
 
         if (!res.error) {
-            alert("✅ Guardado");
+            alert("✅ Registro Exitoso");
             currentPDFItem = item;
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
             limpiarForm();
         } else {
-            alert("Error: " + res.error.message);
+            alert("Error de conexión: " + res.error.message);
         }
-        btn.innerText = "🚀 SUBIR REGISTRO A LA NUBE";
+        btn.innerText = "🚀 GUARDAR REGISTRO";
         btn.disabled = false;
     }
 
@@ -515,7 +521,7 @@
     }
 
     async function eliminarRegistro(id) {
-        if(confirm("¿Eliminar este registro?")) {
+        if(confirm("¿Seguro que quieres borrar este registro de la base de datos?")) {
             await _supabase.from('registros_carga').delete().eq('id', id);
             await cargarDatosDeNube();
         }
