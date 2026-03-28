@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Pro Edition</title>
+    <title>S.I.C.A.M. Elite - Pro Edition</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -15,9 +15,34 @@
             --danger: #ef4444; --success: #10b981; --border: #334155;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; overflow-x: hidden;}
+
+        /* --- LOGIN STYLES --- */
+        #auth-container {
+            position: fixed; top:0; left:0; width: 100%; height: 100%;
+            background: var(--bg); display: flex; align-items: center; justify-content: center;
+            z-index: 9999; transition: 0.5s;
+        }
+        .auth-card {
+            background: var(--card); padding: 30px; border-radius: 20px;
+            width: 90%; max-width: 400px; border: 1px solid var(--border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center;
+        }
+        .auth-card h2 { color: var(--accent); margin-top: 0; }
+        .auth-card input { 
+            background: #0f172a; border: 1px solid var(--border); color: white;
+            margin-bottom: 15px; padding: 15px; width: 100%; border-radius: 10px;
+        }
+        .auth-methods { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-auth { background: var(--accent); color: #0f172a; border:none; padding:15px; border-radius:10px; font-weight:bold; width:100%; cursor:pointer; }
+        .toggle-auth { color: var(--accent); font-size: 0.8rem; cursor: pointer; margin-top: 15px; display: block; }
         
-        .logo-container { text-align: center; margin-bottom: 10px; }
+        /* --- APP STYLES --- */
+        #app-content { display: none; } /* Oculto por defecto */
+        
+        .logo-container { text-align: center; margin-bottom: 10px; position: relative; }
+        .logout-btn { position: absolute; right: 10px; top: 10px; background: var(--danger); border:none; color:white; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem; cursor:pointer;}
+        
         .logo-placeholder { width: 90px; height: 90px; border: 2px dashed var(--accent); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #1e293b; cursor: pointer; overflow: hidden; }
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -64,116 +89,205 @@
 </head>
 <body>
 
-    <div class="logo-container" onclick="document.getElementById('logoInput').click()">
-        <div class="logo-placeholder" id="logoDisplay"><span>SUBIR LOGO</span></div>
-        <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
-    </div>
-
-    <div class="header-app"><h1>SISTEMA DE CONTROL DE CARGA</h1></div>
-
-    <div class="dashboard">
-        <div class="stat-card"><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
-        <div class="stat-card"><h4>MODO ACTIVO</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
-    </div>
-
-    <div class="tabs">
-        <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
-        <button id="tabA" class="tab" onclick="cambiarModo('Aéreo')">✈️ AÉREO</button>
-    </div>
-
-    <div class="main-card">
-        <input type="hidden" id="edit_id">
-        <div class="form-grid">
-            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
-            <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label>N° de Precinto</label><input type="text" id="numPrecinto"></div>
-            <div><label>Cantidad de Bultos</label><input type="number" id="cantBultos"></div>
-            <div class="full"><label>Personas Encargadas / Responsables</label><input type="text" id="encargado"></div>
-            
-            <div class="full">
-                <label>Cliente (Buscar o escribir)</label>
-                <input type="text" id="cliente" list="clientesList" oninput="autocompletarCliente(this.value)" placeholder="▼ Seleccione o escriba el nombre del cliente">
-                <datalist id="clientesList"></datalist>
+    <!-- PANTALLA DE LOGIN -->
+    <div id="auth-container">
+        <div class="auth-card">
+            <h2 id="auth-title">S.I.C.A.M. LOGIN</h2>
+            <div id="login-fields">
+                <input type="text" id="user-input" placeholder="Usuario">
+                <input type="password" id="pass-input" placeholder="Contraseña">
+                <button class="btn-auth" onclick="manejarAuth()">INGRESAR</button>
+                <span class="toggle-auth" onclick="toggleAuthMode(true)">¿No tienes cuenta? Regístrate</span>
             </div>
-            
-            <div><label>Cédula / ID</label><input type="text" id="cedulaCliente"></div>
-            <div class="full"><label>Empresa Solicitante</label><input type="text" id="empresaCliente"></div>
-            
-            <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
-            <div><label>Condición Física</label>
-                <select id="estado">
-                    <option value="Excelente">Excelente ✅</option>
-                    <option value="Bueno">Bueno</option>
-                    <option value="Dañado">Dañado ⚠️</option>
-                    <option value="Sello Violado">Sello Violado 🚫</option>
-                </select>
+            <div id="register-fields" class="hidden">
+                <input type="text" id="reg-user" placeholder="Nuevo Usuario">
+                <input type="password" id="reg-pass" placeholder="Nueva Contraseña">
+                <input type="password" id="reg-master" placeholder="Código Maestro (Para autorizar)">
+                <button class="btn-auth" style="background:var(--success)" onclick="registrarUsuario()">CREAR CUENTA</button>
+                <span class="toggle-auth" onclick="toggleAuthMode(false)">Volver al Login</span>
             </div>
-            <div class="full"><label>Contenido Declarado</label><textarea id="contenido" rows="2"></textarea></div>
-            <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
-            <div class="full">
-                <button type="button" class="btn" style="background:#6366f1; color:white;" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO</button>
-                <div id="seccionCamara" class="camera-box hidden">
-                    <video id="video" autoplay playsinline class="hidden"></video>
-                    <button class="btn" style="background:var(--success); color:white; margin:10px 0" onclick="initCamera()">ENCENDER CÁMARA</button>
-                    <button id="snap" class="btn hidden" style="background:var(--danger); color:white" onclick="takePhoto()">TOMAR FOTO</button>
-                    <img id="photoPreview" class="hidden">
-                    <canvas id="canvas" class="hidden"></canvas>
+        </div>
+    </div>
+
+    <!-- CONTENIDO DE LA APP -->
+    <div id="app-content">
+        <div class="logo-container">
+            <button class="logout-btn" onclick="cerrarSesion()">CERRAR SESIÓN</button>
+            <div class="logo-placeholder" id="logoDisplay" onclick="document.getElementById('logoInput').click()">
+                <span>LOGO</span>
+            </div>
+            <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
+        </div>
+
+        <div class="header-app">
+            <h1>SISTEMA DE CONTROL DE CARGA</h1>
+            <small id="welcome-user" style="color: var(--accent)"></small>
+        </div>
+
+        <div class="dashboard">
+            <div class="stat-card"><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
+            <div class="stat-card"><h4>MODO</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
+        </div>
+
+        <div class="tabs">
+            <button id="tabM" class="tab active" onclick="cambiarModo('Marítimo')">🚢 MARÍTIMO</button>
+            <button id="tabA" class="tab" onclick="cambiarModo('Aéreo')">✈️ AÉREO</button>
+        </div>
+
+        <div class="main-card">
+            <input type="hidden" id="edit_id">
+            <div class="form-grid">
+                <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
+                <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
+                <div><label>N° de Precinto</label><input type="text" id="numPrecinto"></div>
+                <div><label>Cantidad de Bultos</label><input type="number" id="cantBultos"></div>
+                <div class="full"><label>Personas Encargadas / Responsables</label><input type="text" id="encargado"></div>
+                
+                <div class="full">
+                    <label>Cliente (Buscar o escribir)</label>
+                    <input type="text" id="cliente" list="clientesList" oninput="autocompletarCliente(this.value)" placeholder="▼ Seleccione o escriba el nombre del cliente">
+                    <datalist id="clientesList"></datalist>
                 </div>
+                
+                <div><label>Cédula / ID</label><input type="text" id="cedulaCliente"></div>
+                <div class="full"><label>Empresa Solicitante</label><input type="text" id="empresaCliente"></div>
+                
+                <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
+                <div><label>Condición Física</label>
+                    <select id="estado">
+                        <option value="Excelente">Excelente ✅</option>
+                        <option value="Bueno">Bueno</option>
+                        <option value="Dañado">Dañado ⚠️</option>
+                        <option value="Sello Violado">Sello Violado 🚫</option>
+                    </select>
+                </div>
+                <div class="full"><label>Contenido Declarado</label><textarea id="contenido" rows="2"></textarea></div>
+                <div class="full"><label style="color:var(--danger)">Hallazgos No Declarados</label><textarea id="noDeclarada" rows="2"></textarea></div>
+                <div class="full">
+                    <button type="button" class="btn" style="background:#6366f1; color:white;" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO</button>
+                    <div id="seccionCamara" class="camera-box hidden">
+                        <video id="video" autoplay playsinline class="hidden"></video>
+                        <button class="btn" style="background:var(--success); color:white; margin:10px 0" onclick="initCamera()">ENCENDER CÁMARA</button>
+                        <button id="snap" class="btn hidden" style="background:var(--danger); color:white" onclick="takePhoto()">TOMAR FOTO</button>
+                        <img id="photoPreview" class="hidden">
+                        <canvas id="canvas" class="hidden"></canvas>
+                    </div>
+                </div>
+                <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
             </div>
-            <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
+
+            <div class="actions">
+                <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 SUBIR REGISTRO A LA NUBE</button>
+                <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ GENERAR ACTA PDF</button>
+            </div>
         </div>
 
-        <div class="actions">
-            <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 SUBIR REGISTRO A LA NUBE</button>
-            <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ GENERAR ACTA PDF</button>
-        </div>
-    </div>
-
-    <div class="history-section">
-        <h3 style="color:var(--accent); font-size: 0.8rem;">HISTORIAL DE REGISTROS</h3>
-        <div class="search-box">
-            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar registros...">
-        </div>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Acciones</th>
-                        <th>ID Carga</th>
-                        <th>Fecha</th>
-                        <th>Precinto</th>
-                        <th>Bultos</th>
-                        <th>Responsables</th>
-                        <th>Cliente</th>
-                        <th>Cédula</th>
-                        <th>Empresa</th>
-                        <th>Estado</th>
-                        <th>Foto</th>
-                    </tr>
-                </thead>
-                <tbody id="cuerpoTabla"></tbody>
-            </table>
+        <div class="history-section">
+            <h3 style="color:var(--accent); font-size: 0.8rem;">HISTORIAL DE REGISTROS</h3>
+            <div class="search-box">
+                <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar registros...">
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Acciones</th>
+                            <th>ID Carga</th>
+                            <th>Fecha</th>
+                            <th>Precinto</th>
+                            <th>Bultos</th>
+                            <th>Responsables</th>
+                            <th>Cliente</th>
+                            <th>Cédula</th>
+                            <th>Empresa</th>
+                            <th>Estado</th>
+                            <th>Foto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoTabla"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
 <script>
+    // --- CONFIGURACIÓN SUPABASE ---
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
+    // --- VARIABLES DE ESTADO ---
     let db = []; 
     let modoActual = 'Marítimo';
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
     let stream;
     let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
-
-    if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
+    
+    // --- LÓGICA DE USUARIOS ---
+    const MASTER_CODE = "SICAM2026"; // Código para permitir nuevos registros
+    let usuarios = JSON.parse(localStorage.getItem('sicam_users')) || { "admin": "1234" };
 
     document.addEventListener('DOMContentLoaded', () => {
-        cargarDatosDeNube();
-        actualizarDatalistClientes();
+        verificarSesion();
+        if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
     });
+
+    // --- FUNCIONES DE AUTENTICACIÓN ---
+    function toggleAuthMode(isRegister) {
+        document.getElementById('login-fields').classList.toggle('hidden', isRegister);
+        document.getElementById('register-fields').classList.toggle('hidden', !isRegister);
+        document.getElementById('auth-title').innerText = isRegister ? "NUEVO USUARIO" : "S.I.C.A.M. LOGIN";
+    }
+
+    function manejarAuth() {
+        const u = document.getElementById('user-input').value;
+        const p = document.getElementById('pass-input').value;
+
+        if (usuarios[u] && usuarios[u] === p) {
+            iniciarApp(u);
+        } else {
+            alert("Usuario o contraseña incorrectos");
+        }
+    }
+
+    function registrarUsuario() {
+        const u = document.getElementById('reg-user').value;
+        const p = document.getElementById('reg-pass').value;
+        const m = document.getElementById('reg-master').value;
+
+        if(!u || !p) return alert("Completa los campos");
+        if(m !== MASTER_CODE) return alert("Código Maestro incorrecto. No tienes permiso.");
+        
+        usuarios[u] = p;
+        localStorage.setItem('sicam_users', JSON.stringify(usuarios));
+        alert("¡Usuario creado con éxito! Ya puedes ingresar.");
+        toggleAuthMode(false);
+    }
+
+    function iniciarApp(user) {
+        localStorage.setItem('sicam_session', user);
+        document.getElementById('auth-container').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            document.getElementById('welcome-user').innerText = `Operador: ${user.toUpperCase()}`;
+            cargarDatosDeNube();
+            actualizarDatalistClientes();
+        }, 500);
+    }
+
+    function verificarSesion() {
+        const sesion = localStorage.getItem('sicam_session');
+        if(sesion) iniciarApp(sesion);
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('sicam_session');
+        location.reload();
+    }
+
+    // --- LÓGICA DE NEGOCIO (IGUAL A LA ANTERIOR CON MEJORAS) ---
 
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
@@ -207,31 +321,19 @@
         }
     }
 
-    // ARREGLO DEL BUG DE PESTAÑAS
     function cambiarModo(m) {
         if(modoActual === m) return; 
-        
         modoActual = m;
-        
-        // UI
         document.getElementById('tabM').classList.toggle('active', m === 'Marítimo');
         document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
         document.getElementById('txtModo').innerText = m.toUpperCase();
         document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
-        
-        // Limpiar tabla antes de recargar
-        document.getElementById('cuerpoTabla').innerHTML = '';
-        
-        // Resetear buscador para evitar conflictos
-        document.getElementById('buscador').value = '';
-        
         actualizarUI();
     }
 
     function actualizarUI() {
         const cuerpo = document.getElementById('cuerpoTabla');
         const filtro = document.getElementById('buscador').value.toLowerCase();
-        
         const filtrados = db.filter(i => i.tipo === modoActual);
         document.getElementById('cTotal').innerText = filtrados.length;
         
@@ -287,9 +389,6 @@
             foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '')
         };
 
-        memoriaClientes[nombreCliente] = { cedula: item.cedula, empresa: item.empresa };
-        localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes));
-
         let res;
         if(editId) {
             res = await _supabase.from('registros_carga').update(item).eq('id', editId);
@@ -303,7 +402,6 @@
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
             limpiarForm();
-            actualizarDatalistClientes();
         } else {
             alert("Error: " + res.error.message);
         }
@@ -331,11 +429,10 @@
             document.getElementById('photoPreview').classList.remove('hidden');
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        document.getElementById('btnGuardar').innerText = "🔄 ACTUALIZAR REGISTRO";
     }
 
     async function eliminarRegistro(id) {
-        if(confirm("¿Eliminar?")) {
+        if(confirm("¿Eliminar este registro permanentemente?")) {
             await _supabase.from('registros_carga').delete().eq('id', id);
             await cargarDatosDeNube();
         }
@@ -348,7 +445,7 @@
         if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
         doc.setFont("helvetica", "bold"); doc.setFontSize(16);
         doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw / 2, 20, { align: "center" });
-        doc.setFontSize(10); doc.text("Sistema de control de carga Area y Maritima S.I.C.A.M.", pw / 2, 26, { align: "center" });
+        doc.setFontSize(10); doc.text("S.I.C.A.M. - Control de Carga", pw / 2, 26, { align: "center" });
         doc.line(15, 38, pw - 15, 38);
         let y = 45;
         const cell = (l, v, x, w) => {
