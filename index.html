@@ -99,7 +99,6 @@
 </head>
 <body>
 
-    <!-- PANTALLA DE LOGIN -->
     <div id="auth-container">
         <div class="auth-card">
             <h2 id="auth-title">S.I.C.A.M. ACCESO</h2>
@@ -119,7 +118,6 @@
         </div>
     </div>
 
-    <!-- CONTENIDO DE LA APP -->
     <div id="app-content">
         <div class="logo-container">
             <div class="nav-btns">
@@ -132,13 +130,11 @@
             <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
         </div>
 
-        <!-- PANEL DE SÚPER USUARIO (SOLO ACCESIBLE PARA MASTER) -->
         <div id="admin-panel">
             <h3 style="color:var(--warning); margin-top:0">🛠️ ADMINISTRACIÓN DE CUENTAS</h3>
             <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 15px;">Bienvenido, Super Usuario. Aquí tienes el control absoluto de los accesos:</p>
             <div id="user-list-admin">
-                <!-- Se llena dinámicamente -->
-            </div>
+                </div>
             <button class="btn" style="background:var(--card); margin-top:15px; color:var(--accent); border:1px solid var(--accent); height:40px; padding:0" onclick="togglePanelAdmin()">CERRAR PANEL MAESTRO</button>
         </div>
 
@@ -255,7 +251,7 @@
     let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
 
     document.addEventListener('DOMContentLoaded', () => {
-        verificarSesion();
+        verificarSession();
         if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
     });
 
@@ -375,7 +371,7 @@
         localStorage.setItem('sicam_db_users', JSON.stringify(usuarios));
     }
 
-    function verificarSesion() {
+    function verificarSession() {
         const sesion = localStorage.getItem('sicam_active_session');
         if(sesion && usuarios[sesion] && usuarios[sesion].status === "activo") {
             iniciarApp(sesion);
@@ -389,7 +385,7 @@
         location.reload();
     }
 
-    // --- LÓGICA DE FORMULARIO SUPABASE (MANTENIDA) ---
+    // --- LÓGICA DE FORMULARIO SUPABASE ---
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
         if (!error) { 
@@ -518,8 +514,43 @@
     }
 
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
-    async function initCamera() { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); document.getElementById('video').srcObject = stream; document.getElementById('video').classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); }
-    function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.6); document.getElementById('photoPreview').classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); }
+
+    // --- FUNCIONES DE CÁMARA MEJORADAS PARA FLUIDEZ ---
+    async function initCamera() { 
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } 
+            }); 
+            const video = document.getElementById('video');
+            video.srcObject = stream; 
+            video.classList.remove('hidden'); 
+            document.getElementById('snap').classList.remove('hidden');
+            document.getElementById('photoPreview').classList.add('hidden'); 
+        } catch (err) {
+            alert("Error al acceder a la cámara: " + err);
+        }
+    }
+
+    function takePhoto() { 
+        const c = document.getElementById('canvas'); 
+        const v = document.getElementById('video'); 
+        const p = document.getElementById('photoPreview');
+        
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight; 
+        c.getContext('2d').drawImage(v, 0, 0); 
+        
+        p.src = c.toDataURL('image/jpeg', 0.6); 
+        p.classList.remove('hidden'); 
+        v.classList.add('hidden'); 
+        
+        if(stream) {
+            stream.getTracks().forEach(t => t.stop()); 
+        }
+        document.getElementById('snap').classList.add('hidden');
+    }
+    // --- FIN DE MEJORAS DE CÁMARA ---
+
     function loadLogo(e) { const reader = new FileReader(); reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; reader.readAsDataURL(e.target.files[0]); }
     function limpiarForm() { document.getElementById('edit_id').value = ''; ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); document.getElementById('photoPreview').classList.add('hidden'); }
     function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
