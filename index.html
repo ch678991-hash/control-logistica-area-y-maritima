@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>S.C.C.A.M. Elite - Control de Carga</title>
+    <title>S.C.C.A.M. Elite - Pro Edition</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -22,16 +22,16 @@
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 
         .header-app { text-align: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .header-app h1 { font-size: 1.1rem; color: var(--accent); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        .header-app h1 { font-size: 1.1rem; color: var(--accent); margin: 0; text-transform: uppercase; }
 
         .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid var(--border); transition: 0.3s; }
+        .stat-card { background: var(--card); padding: 12px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
         .stat-card h4 { font-size: 0.6rem; color: #94a3b8; margin: 0; text-transform: uppercase; }
         .stat-card p { margin: 5px 0 0; font-size: 1.4rem; font-weight: 800; }
 
         .tabs { display: flex; gap: 5px; }
-        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; transition: all 0.2s ease; }
-        .tab.active { background: white; color: #0f172a; transform: translateY(-2px); box-shadow: 0 -4px 10px rgba(0,0,0,0.2); }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-weight: bold; color: #94a3b8; background: #1e293b; font-size: 0.75rem; transition: 0.2s; }
+        .tab.active { background: white; color: #0f172a; transform: translateY(-2px); }
 
         .main-card { background: white; color: #1e293b; padding: 20px; border-radius: 0 10px 10px 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
@@ -48,20 +48,18 @@
         .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-save { background: #0f172a; color: white; border: 2px solid var(--accent); }
         .btn-download { background: var(--success); color: white; display: none; }
-        .btn-excel { background: #10b981; color: white; }
 
         .history-section { background: var(--card); border-radius: 10px; padding: 15px; margin-top: 25px; }
         .search-box input { background: #0f172a; color: white; border: 1px solid var(--border); padding: 14px; width: 100%; border-radius: 10px; margin-bottom: 15px; }
         
         .table-container { overflow-x: auto; width: 100%; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 1800px; } 
+        table { width: 100%; border-collapse: collapse; min-width: 2200px; } 
         th { text-align: left; padding: 14px; color: var(--accent); font-size: 0.75rem; border-bottom: 2px solid var(--border); text-transform: uppercase; background: #1e293b; position: sticky; top: 0; }
         td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; color: white; vertical-align: middle; }
         .img-table { width: 65px; height: 65px; border-radius: 6px; object-fit: cover; border: 1px solid var(--accent); }
         
-        .badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.7rem; }
-        .bg-exc { background: #064e3b; color: #6ee7b7; }
-        .bg-dan { background: #7f1d1d; color: #fca5a5; }
+        .action-btns { display: flex; gap: 5px; flex-direction: column; }
+        .btn-mini { padding: 8px; border-radius: 6px; border: none; color: white; cursor: pointer; font-size: 0.7rem; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -75,7 +73,7 @@
 
     <div class="dashboard">
         <div class="stat-card"><h4>REGISTROS</h4><p id="cTotal" style="color:var(--accent)">0</p></div>
-        <div class="stat-card"><h4>MODO</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
+        <div class="stat-card"><h4>MODO ACTIVO</h4><p id="txtModo" style="color:var(--success)">MARÍTIMO</p></div>
     </div>
 
     <div class="tabs">
@@ -84,8 +82,9 @@
     </div>
 
     <div class="main-card">
+        <input type="hidden" id="edit_id"> <!-- ID para edición -->
         <div class="form-grid">
-            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal" placeholder="ID de la carga"></div>
+            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
             <div><label>N° de Precinto</label><input type="text" id="numPrecinto"></div>
             <div><label>Cantidad de Bultos</label><input type="number" id="cantBultos"></div>
@@ -120,14 +119,13 @@
         <div class="actions">
             <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 SUBIR REGISTRO A LA NUBE</button>
             <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ GENERAR ACTA PDF</button>
-            <button class="btn btn-excel" onclick="exportarExcel()">📊 DESCARGAR REPORTE EXCEL</button>
         </div>
     </div>
 
     <div class="history-section">
-        <h3 style="color:var(--accent); font-size: 0.9rem;">HISTORIAL DE CARGAS</h3>
+        <h3 style="color:var(--accent); font-size: 0.9rem;">HISTORIAL DE REGISTROS</h3>
         <div class="search-box">
-            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar registros...">
+            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar registros (ID, Cliente, Cédula)...">
         </div>
         <div class="table-container">
             <table>
@@ -138,7 +136,9 @@
                         <th>Fecha</th>
                         <th>Precinto</th>
                         <th>Bultos</th>
+                        <th>Responsables</th>
                         <th>Cliente</th>
+                        <th>Cédula</th>
                         <th>Empresa</th>
                         <th>Estado</th>
                         <th>Foto</th>
@@ -167,67 +167,26 @@
 
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
-        if (!error) { 
-            db = data; 
-            actualizarUI(); 
-        }
+        if (!error) { db = data; actualizarUI(); }
     }
 
-    // FUNCIÓN OPTIMIZADA (SIN BUG)
     function cambiarModo(m) {
-        if(modoActual === m) return; // Si ya está seleccionado, no hace nada
-        
+        if(modoActual === m) return;
         modoActual = m;
-        
-        // UI de Pestañas
         document.getElementById('tabM').classList.toggle('active', m === 'Marítimo');
         document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
-        
-        // Actualizar Textos
         document.getElementById('txtModo').innerText = m.toUpperCase();
-        document.getElementById('txtModo').style.color = m === 'Marítimo' ? '#10b981' : '#22d3ee';
         document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
-        
-        // Refrescar Tabla (Bug Fix: Limpieza inmediata)
-        document.getElementById('cuerpoTabla').innerHTML = '';
         actualizarUI();
-    }
-
-    function actualizarUI() {
-        const cuerpo = document.getElementById('cuerpoTabla');
-        const filtro = document.getElementById('buscador').value.toLowerCase();
-        
-        // Filtrar datos locales
-        const filtrados = db.filter(i => i.tipo === modoActual);
-        document.getElementById('cTotal').innerText = filtrados.length;
-
-        let html = '';
-        filtrados.forEach((i) => {
-            const rowStr = `${i.id_carga} ${i.cliente} ${i.empresa} ${i.cedula}`.toLowerCase();
-            if(rowStr.includes(filtro)) {
-                html += `<tr>
-                    <td>
-                        <button class="btn" style="padding:6px; background:#3b82f6; font-size:0.65rem" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
-                    </td>
-                    <td><b>${i.id_carga}</b></td>
-                    <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
-                    <td>${i.num_precinto || '-'}</td>
-                    <td>${i.cant_bultos || '0'}</td>
-                    <td>${i.cliente || ''}</td>
-                    <td>${i.empresa || ''}</td>
-                    <td><span class="badge ${i.estado === 'Excelente' ? 'bg-exc' : 'bg-dan'}">${i.estado}</span></td>
-                    <td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
-                </tr>`;
-            }
-        });
-        cuerpo.innerHTML = html;
     }
 
     async function registrarEnLaNube() {
         const idVal = document.getElementById('idPrincipal').value;
+        const editId = document.getElementById('edit_id').value;
         if(!idVal) return alert("Ingrese ID");
+
         const btn = document.getElementById('btnGuardar');
-        btn.innerText = "⏳ SUBIENDO...";
+        btn.innerText = "⏳ PROCESANDO...";
         btn.disabled = true;
 
         const item = {
@@ -243,24 +202,140 @@
             no_declared: document.getElementById('noDeclarada').value,
             estado: document.getElementById('estado').value,
             observaciones: document.getElementById('obs').value,
-            foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : ''
+            foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '')
         };
 
-        const { error } = await _supabase.from('registros_carga').insert([item]);
-        if (!error) {
-            alert("✅ Guardado");
+        let res;
+        if(editId) {
+            res = await _supabase.from('registros_carga').update(item).eq('id', editId);
+        } else {
+            res = await _supabase.from('registros_carga').insert([item]);
+        }
+
+        if (!res.error) {
+            alert(editId ? "✅ Registro Actualizado" : "✅ Registro Guardado");
             currentPDFItem = item;
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
             limpiarForm();
         } else {
-            alert("Error: " + error.message);
+            alert("Error: " + res.error.message);
         }
         btn.innerText = "🚀 SUBIR REGISTRO A LA NUBE";
         btn.disabled = false;
     }
 
-    // Funciones adicionales igual que antes
+    function actualizarUI() {
+        const cuerpo = document.getElementById('cuerpoTabla');
+        const filtro = document.getElementById('buscador').value.toLowerCase();
+        const filtrados = db.filter(i => i.tipo === modoActual);
+        document.getElementById('cTotal').innerText = filtrados.length;
+
+        cuerpo.innerHTML = '';
+        filtrados.forEach((i) => {
+            const rowStr = `${i.id_carga} ${i.cliente} ${i.empresa} ${i.cedula}`.toLowerCase();
+            if(rowStr.includes(filtro)) {
+                cuerpo.innerHTML += `<tr>
+                    <td class="action-btns">
+                        <button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
+                        <button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button>
+                        <button class="btn-mini" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">BORRAR</button>
+                    </td>
+                    <td><b>${i.id_carga}</b></td>
+                    <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
+                    <td style="color:var(--accent); font-weight:bold">${i.num_precinto || '-'}</td>
+                    <td>${i.cant_bultos || '0'}</td>
+                    <td>${i.encargado || '-'}</td>
+                    <td>${i.cliente || ''}</td>
+                    <td>${i.cedula || ''}</td>
+                    <td>${i.empresa || ''}</td>
+                    <td>${i.estado}</td>
+                    <td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
+                </tr>`;
+            }
+        });
+    }
+
+    function cargarEdicion(item) {
+        document.getElementById('edit_id').value = item.id;
+        document.getElementById('idPrincipal').value = item.id_carga;
+        document.getElementById('fechaHora').value = item.fecha;
+        document.getElementById('numPrecinto').value = item.num_precinto;
+        document.getElementById('cantBultos').value = item.cant_bultos;
+        document.getElementById('encargado').value = item.encargado;
+        document.getElementById('cliente').value = item.cliente;
+        document.getElementById('cedulaCliente').value = item.cedula;
+        document.getElementById('empresaCliente').value = item.empresa;
+        document.getElementById('almacenista').value = item.almacenista;
+        document.getElementById('estado').value = item.estado;
+        document.getElementById('contenido').value = item.contenido;
+        document.getElementById('noDeclarada').value = item.no_declared;
+        document.getElementById('obs').value = item.observaciones;
+        
+        if(item.foto) {
+            document.getElementById('photoPreview').src = item.foto;
+            document.getElementById('photoPreview').classList.remove('hidden');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('btnGuardar').innerText = "🔄 ACTUALIZAR REGISTRO";
+    }
+
+    async function eliminarRegistro(id) {
+        if(confirm("¿Seguro que desea eliminar permanentemente este registro?")) {
+            await _supabase.from('registros_carga').delete().eq('id', id);
+            await cargarDatosDeNube();
+        }
+    }
+
+    // PDF MEJORADO "ZERO ESPACIOS"
+    function generarPDF(item) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const pw = doc.internal.pageSize.getWidth();
+        
+        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
+        
+        doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+        doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw / 2, 20, { align: "center" });
+        doc.setFontSize(10); doc.text("S.C.C.A.M. ELITE PRO", pw / 2, 26, { align: "center" });
+        doc.line(15, 38, pw - 15, 38);
+
+        let y = 45;
+        const rowHeight = 10;
+        const drawCell = (label, val, x, y, w) => {
+            doc.setFont(undefined, 'bold'); doc.text(label, x + 2, y + 6);
+            doc.setFont(undefined, 'normal'); doc.text(String(val || '-'), x + 35, y + 6);
+            doc.rect(x, y, w, rowHeight);
+        };
+
+        drawCell("ID CARGA:", item.id_carga, 15, y, 90);
+        drawCell("FECHA:", item.fecha, 105, y, 90); y += rowHeight;
+        drawCell("MODALIDAD:", item.tipo, 15, y, 90);
+        drawCell("ESTADO:", item.estado, 105, y, 90); y += rowHeight;
+        drawCell("PRECINTO:", item.num_precinto, 15, y, 90);
+        drawCell("BULTOS:", item.cant_bultos, 105, y, 90); y += rowHeight;
+        drawCell("CLIENTE:", item.cliente, 15, y, 90);
+        drawCell("CEDULA:", item.cedula, 105, y, 90); y += rowHeight;
+        drawCell("EMPRESA:", item.empresa, 15, y, 180); y += rowHeight;
+
+        doc.setFont(undefined, 'bold'); doc.text("DETALLES Y CONTENIDO:", 15, y + 7); y += 10;
+        doc.setFont(undefined, 'normal'); doc.rect(15, y, 180, 20);
+        doc.text(doc.splitTextToSize(item.contenido || 'Sin descripción', 170), 17, y + 7); y += 25;
+
+        if(item.foto) {
+            doc.addImage(item.foto, 'JPEG', 60, y, 90, 60);
+            y += 70;
+        }
+
+        let fY = 265;
+        doc.line(15, fY, 65, fY); doc.text("RESPONSABLE", 40, fY + 5, {align:"center"});
+        doc.line(80, fY, 130, fY); doc.text("ALMACENISTA", 105, fY + 5, {align:"center"});
+        doc.line(145, fY, 195, fY); doc.text("SENIAT", 170, fY + 5, {align:"center"});
+
+        doc.save(`ACTA_${item.id_carga}.pdf`);
+    }
+
+    // Cámara y Utilidades
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
     async function initCamera() { 
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -275,49 +350,13 @@
         document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.6);
         document.getElementById('photoPreview').classList.remove('hidden');
         if(stream) stream.getTracks().forEach(t => t.stop());
+        v.classList.add('hidden'); document.getElementById('snap').classList.add('hidden');
     }
-
-    function generarPDF(item) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const pw = doc.internal.pageSize.getWidth();
-        if(appLogo) doc.addImage(appLogo, 'PNG', 15, 10, 25, 25);
-        doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", pw / 2, 20, { align: "center" });
-        doc.setFontSize(10); doc.text("S.C.C.A.M. ELITE", pw / 2, 26, { align: "center" });
-        let y = 50;
-        const addL = (l, v) => { doc.setFont(undefined, 'bold'); doc.text(l, 20, y); doc.setFont(undefined, 'normal'); doc.text(String(v || '-'), 70, y); y += 10; };
-        addL("ID CARGA:", item.id_carga);
-        addL("FECHA:", item.fecha);
-        addL("PRECINTO:", item.num_precinto);
-        addL("CLIENTE:", item.cliente);
-        if(item.foto) doc.addImage(item.foto, 'JPEG', 20, y, 90, 60);
-        
-        let fY = 270;
-        doc.line(20, fY, 70, fY); doc.text("RESPONSABLE", 30, fY + 5);
-        doc.line(80, fY, 130, fY); doc.text("ALMACÉN", 95, fY + 5);
-        doc.line(140, fY, 190, fY); doc.text("SENIAT", 160, fY + 5);
-        doc.save(`ACTA_${item.id_carga}.pdf`);
-    }
-
     function loadLogo(e) {
         const reader = new FileReader();
         reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
         reader.readAsDataURL(e.target.files[0]);
     }
-
     function limpiarForm() {
-        ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('photoPreview').classList.add('hidden');
-    }
-
-    function exportarExcel() {
-        const ws = XLSX.utils.json_to_sheet(db);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Historial");
-        XLSX.writeFile(wb, "REPORTE_SCCAM.xlsx");
-    }
-
-    function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
-</script>
-</body>
-</html>
+        document.getElementById('edit_id').value = '';
+        ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaClient
