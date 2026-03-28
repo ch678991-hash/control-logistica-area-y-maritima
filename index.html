@@ -99,7 +99,6 @@
 </head>
 <body>
 
-    <!-- PANTALLA DE LOGIN -->
     <div id="auth-container">
         <div class="auth-card">
             <h2 id="auth-title">S.I.C.A.M. ACCESO</h2>
@@ -119,7 +118,6 @@
         </div>
     </div>
 
-    <!-- CONTENIDO DE LA APP -->
     <div id="app-content">
         <div class="logo-container">
             <div class="nav-btns">
@@ -132,13 +130,9 @@
             <input type="file" id="logoInput" hidden accept="image/*" onchange="loadLogo(event)">
         </div>
 
-        <!-- PANEL DE SÚPER USUARIO (SOLO ACCESIBLE PARA MASTER) -->
         <div id="admin-panel">
             <h3 style="color:var(--warning); margin-top:0">🛠️ ADMINISTRACIÓN DE CUENTAS</h3>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 15px;">Bienvenido, Super Usuario. Aquí tienes el control absoluto de los accesos:</p>
-            <div id="user-list-admin">
-                <!-- Se llena dinámicamente -->
-            </div>
+            <div id="user-list-admin"></div>
             <button class="btn" style="background:var(--card); margin-top:15px; color:var(--accent); border:1px solid var(--accent); height:40px; padding:0" onclick="togglePanelAdmin()">CERRAR PANEL MAESTRO</button>
         </div>
 
@@ -190,7 +184,7 @@
                     <button type="button" class="btn" style="background:#6366f1; color:white;" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO</button>
                     <div id="seccionCamara" class="camera-box hidden">
                         <video id="video" autoplay playsinline class="hidden"></video>
-                        <button class="btn" style="background:var(--success); color:white; margin:10px 0" onclick="initCamera()">ENCENDER CÁMARA</button>
+                        <button id="initCamBtn" class="btn" style="background:var(--success); color:white; margin:10px 0" onclick="initCamera()">ENCENDER CÁMARA</button>
                         <button id="snap" class="btn hidden" style="background:var(--danger); color:white" onclick="takePhoto()">TOMAR FOTO</button>
                         <img id="photoPreview" class="hidden">
                         <canvas id="canvas" class="hidden"></canvas>
@@ -213,19 +207,7 @@
             <div class="table-container">
                 <table>
                     <thead>
-                        <tr>
-                            <th>Acciones</th>
-                            <th>ID Carga</th>
-                            <th>Fecha</th>
-                            <th>Precinto</th>
-                            <th>Bultos</th>
-                            <th>Responsable</th>
-                            <th>Cliente</th>
-                            <th>Cédula</th>
-                            <th>Empresa</th>
-                            <th>Estado</th>
-                            <th>Foto</th>
-                        </tr>
+                        <tr><th>Acciones</th><th>ID Carga</th><th>Fecha</th><th>Precinto</th><th>Bultos</th><th>Responsable</th><th>Cliente</th><th>Cédula</th><th>Empresa</th><th>Estado</th><th>Foto</th></tr>
                     </thead>
                     <tbody id="cuerpoTabla"></tbody>
                 </table>
@@ -237,10 +219,8 @@
     const SB_URL = "https://bnbecaxqnbuzacdsbvco.supabase.co"; 
     const SB_KEY = "sb_publishable_NYcOsL-Ot5lF9TEDMK8jpg_mXC6fdp7";
     const _supabase = supabase.createClient(SB_URL, SB_KEY);
-
     const AUTH_MASTER_CODE = "SICAM2026"; 
     
-    // USUARIOS POR DEFECTO
     let usuarios = JSON.parse(localStorage.getItem('sicam_db_users')) || {
         "admin": { pass: "1234", rol: "operador", status: "activo" },
         "master": { pass: "admin99", rol: "super", status: "activo" }
@@ -251,13 +231,66 @@
     let modoActual = 'Marítimo';
     let appLogo = localStorage.getItem('srca_logo') || '';
     let currentPDFItem = null;
-    let stream;
+    let streamCamera = null; // Variable para controlar el flujo de la cámara
     let memoriaClientes = JSON.parse(localStorage.getItem('sccam_clientes')) || {};
 
     document.addEventListener('DOMContentLoaded', () => {
         verificarSesion();
         if(appLogo) document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`;
     });
+
+    // --- LÓGICA DE CÁMARA OPTIMIZADA ---
+    function mostrarSeccionCamara() { 
+        document.getElementById('seccionCamara').classList.remove('hidden'); 
+    }
+
+    async function initCamera() { 
+        try {
+            // Intentamos apagar cualquier flujo previo antes de iniciar
+            stopCamera();
+            streamCamera = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } 
+            });
+            const video = document.getElementById('video');
+            video.srcObject = streamCamera;
+            video.classList.remove('hidden');
+            document.getElementById('snap').classList.remove('hidden');
+            document.getElementById('initCamBtn').classList.add('hidden');
+        } catch (err) {
+            alert("Error al acceder a la cámara: " + err);
+        }
+    }
+
+    function stopCamera() {
+        if (streamCamera) {
+            streamCamera.getTracks().forEach(track => track.stop());
+            streamCamera = null;
+        }
+        const video = document.getElementById('video');
+        video.srcObject = null;
+        video.classList.add('hidden');
+    }
+
+    function takePhoto() {
+        const c = document.getElementById('canvas'); 
+        const v = document.getElementById('video');
+        const preview = document.getElementById('photoPreview');
+        
+        // Dibujamos la foto
+        c.width = v.videoWidth; 
+        c.height = v.videoHeight;
+        c.getContext('2d').drawImage(v, 0, 0);
+        
+        // Pasamos a imagen y mostramos
+        preview.src = c.toDataURL('image/jpeg', 0.6);
+        preview.classList.remove('hidden');
+        
+        // OPTIMIZACIÓN: Apagar cámara inmediatamente después de capturar
+        stopCamera();
+        document.getElementById('snap').classList.add('hidden');
+        document.getElementById('initCamBtn').classList.remove('hidden');
+        document.getElementById('initCamBtn').innerText = "TOMAR OTRA FOTO";
+    }
 
     // --- LÓGICA DE LOGIN Y PERMISOS ---
     function toggleAuthMode(isRegister) {
@@ -269,54 +302,36 @@
     function manejarAuth() {
         const u = document.getElementById('user-input').value.trim().toLowerCase();
         const p = document.getElementById('pass-input').value;
-
         if (usuarios[u]) {
             if (usuarios[u].status === "suspendido") return alert("Acceso restringido por el Administrador.");
-            if (usuarios[u].pass === p) {
-                iniciarApp(u);
-            } else {
-                alert("Contraseña incorrecta.");
-            }
-        } else {
-            alert("Usuario no registrado.");
-        }
+            if (usuarios[u].pass === p) { iniciarApp(u); } else { alert("Contraseña incorrecta."); }
+        } else { alert("Usuario no registrado."); }
     }
 
     function registrarUsuario() {
         const u = document.getElementById('reg-user').value.toLowerCase().trim();
         const p = document.getElementById('reg-pass').value;
         const m = document.getElementById('reg-master').value;
-
         if(!u || !p) return alert("Complete los campos.");
         if(m !== AUTH_MASTER_CODE) return alert("Código maestro inválido.");
         if(usuarios[u]) return alert("Este usuario ya existe.");
-        
         usuarios[u] = { pass: p, rol: "operador", status: "activo" };
-        guardarUsuarios();
-        alert("¡Cuenta creada! Ya puedes ingresar.");
-        toggleAuthMode(false);
+        guardarUsuarios(); alert("¡Cuenta creada!"); toggleAuthMode(false);
     }
 
     function iniciarApp(userKey) {
         currentUser = usuarios[userKey];
-        currentUser.id_key = userKey;
         localStorage.setItem('sicam_active_session', userKey);
-        
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-content').style.display = 'block';
         document.getElementById('welcome-user').innerText = `USUARIO: ${userKey.toUpperCase()}`;
-        
-        // MOSTRAR BOTÓN DE ADMIN SÓLO SI ES MASTER
         if(currentUser.rol === "super") {
             document.getElementById('admin-toggle-btn').style.display = 'block';
             actualizarListaUsuariosAdmin();
         }
-
-        cargarDatosDeNube();
-        actualizarDatalistClientes();
+        cargarDatosDeNube(); actualizarDatalistClientes();
     }
 
-    // --- FUNCIONES DEL PANEL DE CONTROL MAESTRO ---
     function togglePanelAdmin() {
         const panel = document.getElementById('admin-panel');
         panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
@@ -326,177 +341,88 @@
     function actualizarListaUsuariosAdmin() {
         const container = document.getElementById('user-list-admin');
         container.innerHTML = '';
-        
         Object.keys(usuarios).forEach(u => {
             const user = usuarios[u];
             const isSuspended = user.status === "suspendido";
             const card = document.createElement('div');
             card.className = 'user-row';
-            
             card.innerHTML = `
                 <div class="user-info">
-                    <div>
-                        <b style="color:var(--accent); font-size:1rem">${u.toUpperCase()}</b><br>
-                        <small style="color:#94a3b8">ROL: ${user.rol.toUpperCase()}</small>
-                    </div>
-                    <div style="text-align: right">
-                        <span style="color:var(--success); font-weight:bold">CLAVE: ${user.pass}</span><br>
-                        <small style="${isSuspended ? 'color:var(--danger)' : 'color:var(--success)'}">ESTADO: ${user.status.toUpperCase()}</small>
-                    </div>
+                    <div><b style="color:var(--accent); font-size:1rem">${u.toUpperCase()}</b><br><small style="color:#94a3b8">ROL: ${user.rol.toUpperCase()}</small></div>
+                    <div style="text-align: right"><span style="color:var(--success); font-weight:bold">CLAVE: ${user.pass}</span><br><small style="${isSuspended ? 'color:var(--danger)' : 'color:var(--success)'}">ESTADO: ${user.status.toUpperCase()}</small></div>
                 </div>
                 <div class="user-actions">
-                    <button class="btn-panel" style="background:${isSuspended ? 'var(--success)' : 'var(--warning)'}" onclick="statusUsuario('${u}')">
-                        ${isSuspended ? 'ACTIVAR' : 'RESTRINGIR'}
-                    </button>
-                    ${u !== 'master' && u !== 'admin' ? `
-                        <button class="btn-panel" style="background:var(--danger)" onclick="eliminarUsuario('${u}')">ELIMINAR</button>
-                    ` : ''}
-                </div>
-            `;
+                    <button class="btn-panel" style="background:${isSuspended ? 'var(--success)' : 'var(--warning)'}" onclick="statusUsuario('${u}')">${isSuspended ? 'ACTIVAR' : 'RESTRINGIR'}</button>
+                    ${u !== 'master' && u !== 'admin' ? `<button class="btn-panel" style="background:var(--danger)" onclick="eliminarUsuario('${u}')">ELIMINAR</button>` : ''}
+                </div>`;
             container.appendChild(card);
         });
     }
 
-    function statusUsuario(u) {
-        usuarios[u].status = usuarios[u].status === "activo" ? "suspendido" : "activo";
-        guardarUsuarios();
-        actualizarListaUsuariosAdmin();
-    }
-
-    function eliminarUsuario(u) {
-        if(confirm(`¿Estás seguro de eliminar permanentemente a ${u.toUpperCase()}?`)) {
-            delete usuarios[u];
-            guardarUsuarios();
-            actualizarListaUsuariosAdmin();
-        }
-    }
-
-    function guardarUsuarios() {
-        localStorage.setItem('sicam_db_users', JSON.stringify(usuarios));
-    }
-
+    function statusUsuario(u) { usuarios[u].status = usuarios[u].status === "activo" ? "suspendido" : "activo"; guardarUsuarios(); actualizarListaUsuariosAdmin(); }
+    function eliminarUsuario(u) { if(confirm(`¿Eliminar a ${u.toUpperCase()}?`)) { delete usuarios[u]; guardarUsuarios(); actualizarListaUsuariosAdmin(); } }
+    function guardarUsuarios() { localStorage.setItem('sicam_db_users', JSON.stringify(usuarios)); }
     function verificarSesion() {
         const sesion = localStorage.getItem('sicam_active_session');
-        if(sesion && usuarios[sesion] && usuarios[sesion].status === "activo") {
-            iniciarApp(sesion);
-        } else {
-            localStorage.removeItem('sicam_active_session');
-        }
+        if(sesion && usuarios[sesion] && usuarios[sesion].status === "activo") { iniciarApp(sesion); } else { localStorage.removeItem('sicam_active_session'); }
     }
+    function cerrarSesion() { stopCamera(); localStorage.removeItem('sicam_active_session'); location.reload(); }
 
-    function cerrarSesion() {
-        localStorage.removeItem('sicam_active_session');
-        location.reload();
-    }
-
-    // --- LÓGICA DE FORMULARIO SUPABASE (MANTENIDA) ---
+    // --- LÓGICA DE FORMULARIO SUPABASE ---
     async function cargarDatosDeNube() {
         const { data, error } = await _supabase.from('registros_carga').select('*').order('created_at', { ascending: false });
         if (!error) { 
-            db = data; 
-            actualizarUI(); 
-            data.forEach(reg => {
-                if(reg.cliente && reg.cedula) memoriaClientes[reg.cliente] = { cedula: reg.cedula, empresa: reg.empresa };
-            });
-            localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes));
-            actualizarDatalistClientes();
+            db = data; actualizarUI(); 
+            data.forEach(reg => { if(reg.cliente && reg.cedula) memoriaClientes[reg.cliente] = { cedula: reg.cedula, empresa: reg.empresa }; });
+            localStorage.setItem('sccam_clientes', JSON.stringify(memoriaClientes)); actualizarDatalistClientes();
         }
     }
 
     function actualizarDatalistClientes() {
-        const list = document.getElementById('clientesList');
-        list.innerHTML = '';
-        Object.keys(memoriaClientes).sort().forEach(nombre => {
-            const option = document.createElement('option');
-            option.value = nombre;
-            list.appendChild(option);
-        });
+        const list = document.getElementById('clientesList'); list.innerHTML = '';
+        Object.keys(memoriaClientes).sort().forEach(nombre => { const option = document.createElement('option'); option.value = nombre; list.appendChild(option); });
     }
 
     function autocompletarCliente(valor) {
-        if(memoriaClientes[valor]) {
-            document.getElementById('cedulaCliente').value = memoriaClientes[valor].cedula;
-            document.getElementById('empresaCliente').value = memoriaClientes[valor].empresa;
-        }
+        if(memoriaClientes[valor]) { document.getElementById('cedulaCliente').value = memoriaClientes[valor].cedula; document.getElementById('empresaCliente').value = memoriaClientes[valor].empresa; }
     }
 
     function cambiarModo(m) {
         if(modoActual === m) return; 
-        modoActual = m;
-        document.getElementById('tabM').classList.toggle('active', m === 'Marítimo');
-        document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
-        document.getElementById('txtModo').innerText = m.toUpperCase();
-        document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
+        modoActual = m; document.getElementById('tabM').classList.toggle('active', m === 'Marítimo'); document.getElementById('tabA').classList.toggle('active', m === 'Aéreo');
+        document.getElementById('txtModo').innerText = m.toUpperCase(); document.getElementById('labelId').innerText = m === 'Marítimo' ? "N° Contenedor" : "N° Guía / Vuelo";
         actualizarUI();
     }
 
     function actualizarUI() {
-        const cuerpo = document.getElementById('cuerpoTabla');
-        const filtro = document.getElementById('buscador').value.toLowerCase();
-        const filtrados = db.filter(i => i.tipo === modoActual);
-        document.getElementById('cTotal').innerText = filtrados.length;
-        
+        const cuerpo = document.getElementById('cuerpoTabla'); const filtro = document.getElementById('buscador').value.toLowerCase();
+        const filtrados = db.filter(i => i.tipo === modoActual); document.getElementById('cTotal').innerText = filtrados.length;
         let html = '';
         filtrados.forEach((i) => {
             if(`${i.id_carga} ${i.cliente} ${i.empresa}`.toLowerCase().includes(filtro)) {
-                html += `<tr>
-                    <td class="action-btns">
-                        <button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
-                        <button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button>
-                        <button class="btn-mini" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">BORRAR</button>
-                    </td>
-                    <td><b>${i.id_carga}</b></td>
-                    <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
-                    <td>${i.num_precinto || '-'}</td>
-                    <td>${i.cant_bultos || '0'}</td>
-                    <td>${i.encargado || '-'}</td>
-                    <td>${i.cliente || ''}</td>
-                    <td>${i.cedula || ''}</td>
-                    <td>${i.empresa || ''}</td>
-                    <td>${i.estado}</td>
-                    <td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
-                </tr>`;
+                html += `<tr><td class="action-btns"><button class="btn-mini" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button><button class="btn-mini" style="background:#f59e0b" onclick='cargarEdicion(${JSON.stringify(i)})'>EDITAR</button><button class="btn-mini" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">BORRAR</button></td><td><b>${i.id_carga}</b></td><td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td><td>${i.num_precinto || '-'}</td><td>${i.cant_bultos || '0'}</td><td>${i.encargado || '-'}</td><td>${i.cliente || ''}</td><td>${i.cedula || ''}</td><td>${i.empresa || ''}</td><td>${i.estado}</td><td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td></tr>`;
             }
         });
         cuerpo.innerHTML = html;
     }
 
     async function registrarEnLaNube() {
-        const idVal = document.getElementById('idPrincipal').value;
-        const nombreCliente = document.getElementById('cliente').value;
-        const editId = document.getElementById('edit_id').value;
-        if(!idVal || !nombreCliente) return alert("Falta ID de Carga o Cliente");
-        const btn = document.getElementById('btnGuardar');
-        btn.innerText = "⏳ GUARDANDO..."; btn.disabled = true;
+        const idVal = document.getElementById('idPrincipal').value; const nombreCliente = document.getElementById('cliente').value;
+        const editId = document.getElementById('edit_id').value; if(!idVal || !nombreCliente) return alert("Falta ID de Carga o Cliente");
+        const btn = document.getElementById('btnGuardar'); btn.innerText = "⏳ GUARDANDO..."; btn.disabled = true;
         const item = { id_carga: idVal, tipo: modoActual, fecha: document.getElementById('fechaHora').value, num_precinto: document.getElementById('numPrecinto').value, cant_bultos: document.getElementById('cantBultos').value, encargado: document.getElementById('encargado').value, almacenista: document.getElementById('almacenista').value, cliente: nombreCliente, empresa: document.getElementById('empresaCliente').value, cedula: document.getElementById('cedulaCliente').value, contenido: document.getElementById('contenido').value, no_declared: document.getElementById('noDeclarada').value, estado: document.getElementById('estado').value, observaciones: document.getElementById('obs').value, foto: document.getElementById('photoPreview').src.startsWith('data:image') ? document.getElementById('photoPreview').src : (editId ? db.find(x => x.id == editId).foto : '') };
-        if(editId) { await _supabase.from('registros_carga').update(item).eq('id', editId); } 
-        else { await _supabase.from('registros_carga').insert([item]); }
-        alert("✅ Registro Guardado");
-        currentPDFItem = item; document.getElementById('btnDescargar').style.display = 'block';
-        await cargarDatosDeNube(); limpiarForm();
-        btn.innerText = "🚀 GUARDAR REGISTRO"; btn.disabled = false;
+        if(editId) { await _supabase.from('registros_carga').update(item).eq('id', editId); } else { await _supabase.from('registros_carga').insert([item]); }
+        alert("✅ Registro Guardado"); currentPDFItem = item; document.getElementById('btnDescargar').style.display = 'block';
+        await cargarDatosDeNube(); limpiarForm(); btn.innerText = "🚀 GUARDAR REGISTRO"; btn.disabled = false;
     }
 
     function cargarEdicion(item) {
-        document.getElementById('edit_id').value = item.id;
-        document.getElementById('idPrincipal').value = item.id_carga;
-        document.getElementById('fechaHora').value = item.fecha;
-        document.getElementById('numPrecinto').value = item.num_precinto;
-        document.getElementById('cantBultos').value = item.cant_bultos;
-        document.getElementById('encargado').value = item.encargado;
-        document.getElementById('cliente').value = item.cliente;
-        document.getElementById('cedulaCliente').value = item.cedula;
-        document.getElementById('empresaCliente').value = item.empresa;
-        document.getElementById('almacenista').value = item.almacenista;
-        document.getElementById('estado').value = item.estado;
-        document.getElementById('contenido').value = item.contenido;
-        document.getElementById('noDeclarada').value = item.no_declared;
-        document.getElementById('obs').value = item.observaciones;
+        document.getElementById('edit_id').value = item.id; document.getElementById('idPrincipal').value = item.id_carga; document.getElementById('fechaHora').value = item.fecha; document.getElementById('numPrecinto').value = item.num_precinto; document.getElementById('cantBultos').value = item.cant_bultos; document.getElementById('encargado').value = item.encargado; document.getElementById('cliente').value = item.cliente; document.getElementById('cedulaCliente').value = item.cedula; document.getElementById('empresaCliente').value = item.empresa; document.getElementById('almacenista').value = item.almacenista; document.getElementById('estado').value = item.estado; document.getElementById('contenido').value = item.contenido; document.getElementById('noDeclarada').value = item.no_declared; document.getElementById('obs').value = item.observaciones;
         if(item.foto) { document.getElementById('photoPreview').src = item.foto; document.getElementById('photoPreview').classList.remove('hidden'); }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async function eliminarRegistro(id) { if(confirm("¿Borrar registro de la nube?")) { await _supabase.from('registros_carga').delete().eq('id', id); await cargarDatosDeNube(); } }
+    async function eliminarRegistro(id) { if(confirm("¿Borrar registro?")) { await _supabase.from('registros_carga').delete().eq('id', id); await cargarDatosDeNube(); } }
 
     function generarPDF(item) {
         const { jsPDF } = window.jspdf; const doc = new jsPDF(); const pw = doc.internal.pageSize.getWidth();
@@ -517,11 +443,15 @@
         doc.save(`ACTA_${item.id_carga}.pdf`);
     }
 
-    function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
-    async function initCamera() { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); document.getElementById('video').srcObject = stream; document.getElementById('video').classList.remove('hidden'); document.getElementById('snap').classList.remove('hidden'); }
-    function takePhoto() { const c = document.getElementById('canvas'); const v = document.getElementById('video'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0); document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.6); document.getElementById('photoPreview').classList.remove('hidden'); if(stream) stream.getTracks().forEach(t => t.stop()); }
     function loadLogo(e) { const reader = new FileReader(); reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; }; reader.readAsDataURL(e.target.files[0]); }
-    function limpiarForm() { document.getElementById('edit_id').value = ''; ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); document.getElementById('photoPreview').classList.add('hidden'); }
+    
+    function limpiarForm() { 
+        document.getElementById('edit_id').value = ''; 
+        ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = ''); 
+        document.getElementById('photoPreview').classList.add('hidden'); 
+        document.getElementById('photoPreview').src = '';
+        stopCamera();
+    }
     function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
 </script>
 </body>
