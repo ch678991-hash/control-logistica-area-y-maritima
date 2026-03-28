@@ -53,16 +53,10 @@
         .search-box input { background: #0f172a; color: white; border: 1px solid #334155; padding: 12px; width: 100%; border-radius: 8px; margin-bottom: 15px; }
         
         .table-container { overflow-x: auto; width: 100%; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 2000px; } 
-        th { text-align: left; padding: 12px; color: var(--accent); font-size: 0.7rem; border-bottom: 2px solid #334155; text-transform: uppercase; background: #1e293b; position: sticky; top: 0; }
+        table { width: 100%; border-collapse: collapse; min-width: 2200px; } 
+        th { text-align: left; padding: 12px; color: var(--accent); font-size: 0.7rem; border-bottom: 2px solid #334155; text-transform: uppercase; background: #1e293b; }
         td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.8rem; color: white; vertical-align: middle; }
-        .img-table { width: 60px; height: 60px; border-radius: 5px; object-fit: cover; cursor: pointer; }
-        
-        .badge-status { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.7rem; }
-        .bg-excelente { background: #064e3b; color: #6ee7b7; }
-        .bg-danado { background: #7f1d1d; color: #fca5a5; }
-
-        .action-btn { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; }
+        .img-table { width: 60px; height: 60px; border-radius: 5px; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -86,20 +80,24 @@
 
     <div class="main-card">
         <div class="form-grid">
-            <!-- DATOS PRINCIPALES -->
-            <div><label id="labelId">N° Contenedor</label><input type="text" id="idPrincipal" placeholder="Ingrese Identificación"></div>
+            <!-- IDENTIFICACIÓN -->
+            <div><label id="labelId">N° Contenedor / Guía</label><input type="text" id="idPrincipal"></div>
             <div><label>Fecha y Hora</label><input type="datetime-local" id="fechaHora"></div>
-            <div><label id="labelSeguridad">N° Precinto / Cant. Bultos</label><input type="text" id="bultos" placeholder="Seguridad / Cantidad"></div>
-            <div><label>Inspector Actuante</label><input type="text" id="encargado" placeholder="Nombre del Inspector"></div>
             
-            <!-- DATOS DEL CLIENTE SEPARADOS -->
-            <div><label>Nombre del Cliente</label><input type="text" id="cliente" placeholder="Nombre Completo"></div>
-            <div><label>Cédula / RIF / ID</label><input type="text" id="cedulaCliente" placeholder="Documento Identidad"></div>
+            <!-- SEPARACIÓN DE PRECINTO Y BULTOS -->
+            <div><label>N° de Precinto (Seguridad)</label><input type="text" id="numPrecinto" placeholder="Ej: ABC123456"></div>
+            <div><label>Cantidad de Bultos</label><input type="number" id="cantBultos" placeholder="0"></div>
             
-            <div class="full"><label>Empresa Solicitante</label><input type="text" id="empresaCliente" placeholder="Nombre de la Empresa"></div>
+            <!-- RESPONSABLES -->
+            <div class="full"><label>Personas Encargadas / Responsables</label><input type="text" id="encargado" placeholder="Nombres de los responsables"></div>
             
-            <!-- LOGÍSTICA -->
-            <div><label>Encargado Almacén</label><input type="text" id="almacenista" placeholder="Responsable Almacén"></div>
+            <!-- CLIENTE -->
+            <div><label>Nombre del Cliente</label><input type="text" id="cliente"></div>
+            <div><label>Cédula / ID / RIF</label><input type="text" id="cedulaCliente"></div>
+            
+            <div class="full"><label>Empresa Solicitante</label><input type="text" id="empresaCliente"></div>
+            
+            <div><label>Encargado Almacén</label><input type="text" id="almacenista"></div>
             <div><label>Condición Física</label>
                 <select id="estado">
                     <option value="Excelente">Excelente ✅</option>
@@ -109,13 +107,13 @@
                 </select>
             </div>
 
-            <!-- CONTENIDO -->
-            <div class="full"><label>Contenido Declarado</label><textarea id="contenido" rows="2" placeholder="Describa la carga..."></textarea></div>
-            <div class="full"><label style="color:var(--danger)">Hallazgos / Mercancía No Declarada</label><textarea id="noDeclarada" rows="2" placeholder="¿Se encontró algo más?"></textarea></div>
+            <!-- CARGA -->
+            <div class="full"><label>Contenido Declarado</label><textarea id="contenido" rows="2"></textarea></div>
+            <div class="full"><label style="color:var(--danger)">Hallazgos / Mercancía No Declarada</label><textarea id="noDeclarada" rows="2"></textarea></div>
             
-            <!-- MULTIMEDIA -->
+            <!-- FOTO -->
             <div class="full">
-                <button type="button" class="btn" style="background:#6366f1; color:white;" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO DE CARGA</button>
+                <button type="button" class="btn" style="background:#6366f1; color:white;" id="toggleCamBtn" onclick="mostrarSeccionCamara()">📸 CAPTURAR FOTO</button>
                 <div id="seccionCamara" class="camera-box hidden">
                     <video id="video" autoplay playsinline class="hidden"></video>
                     <button class="btn" style="background:var(--success); color:white; margin:10px 0" onclick="initCamera()">ENCENDER CÁMARA</button>
@@ -125,21 +123,21 @@
                 </div>
             </div>
 
-            <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2" placeholder="Notas adicionales..."></textarea></div>
+            <div class="full"><label>Observaciones Finales</label><textarea id="obs" rows="2"></textarea></div>
         </div>
 
         <div class="actions">
             <button id="btnGuardar" class="btn btn-save" onclick="registrarEnLaNube()">🚀 SUBIR REGISTRO A LA NUBE</button>
             <button id="btnDescargar" class="btn btn-download" onclick="descargarActaManual()">⬇️ GENERAR ACTA PDF</button>
-            <button class="btn" style="background:var(--success); color:white" onclick="exportarExcel()">📊 DESCARGAR REPORTE EXCEL</button>
+            <button class="btn" style="background:var(--success); color:white" onclick="exportarExcel()">📊 EXPORTAR A EXCEL</button>
         </div>
     </div>
 
-    <!-- SECCIÓN DE BÚSQUEDA Y TABLA DETALLADA -->
+    <!-- TABLA DE HISTORIAL -->
     <div class="history-section">
-        <h3 style="color:var(--accent); font-size: 0.9rem; margin-top: 0;">HISTORIAL DETALLADO DE CARGAS</h3>
+        <h3 style="color:var(--accent); font-size: 0.9rem;">HISTORIAL DE CARGAS REGISTRADAS</h3>
         <div class="search-box">
-            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Filtrar por Cédula, Empresa, Cliente o ID de Carga...">
+            <input type="text" id="buscador" onkeyup="actualizarUI()" placeholder="🔍 Buscar por ID, Cliente, Cédula o Empresa...">
         </div>
         
         <div class="table-container">
@@ -149,16 +147,16 @@
                         <th>Acciones</th>
                         <th>ID Carga</th>
                         <th>Fecha</th>
+                        <th>Precinto</th>
+                        <th>Bultos</th>
+                        <th>Responsables</th>
                         <th>Cliente</th>
-                        <th>Cédula/ID</th>
+                        <th>Cédula</th>
                         <th>Empresa</th>
-                        <th>Precinto/Bultos</th>
-                        <th>Inspector</th>
-                        <th>Almacenista</th>
+                        <th>Almacén</th>
                         <th>Estado</th>
                         <th>Contenido</th>
                         <th>Hallazgos</th>
-                        <th>Observaciones</th>
                         <th>Foto</th>
                     </tr>
                 </thead>
@@ -197,7 +195,7 @@
 
     async function registrarEnLaNube() {
         const idVal = document.getElementById('idPrincipal').value;
-        if(!idVal) return alert("Por favor, ingrese el ID de la carga.");
+        if(!idVal) return alert("Ingrese el ID");
 
         const btn = document.getElementById('btnGuardar');
         btn.innerText = "⏳ SUBIENDO...";
@@ -207,7 +205,8 @@
             id_carga: idVal,
             tipo: modoActual,
             fecha: document.getElementById('fechaHora').value,
-            bultos: document.getElementById('bultos').value,
+            num_precinto: document.getElementById('numPrecinto').value, // Nuevo
+            bultos: document.getElementById('cantBultos').value,      // Nuevo
             encargado: document.getElementById('encargado').value,
             almacenista: document.getElementById('almacenista').value,
             cliente: document.getElementById('cliente').value,
@@ -222,14 +221,13 @@
 
         const { error } = await _supabase.from('registros_carga').insert([item]);
         
-        if (error) {
-            alert("Error al subir: " + error.message);
-        } else {
-            alert("✅ Registro subido exitosamente a la nube");
+        if (error) alert("Error: " + error.message);
+        else {
+            alert("✅ Registro exitoso");
             currentPDFItem = item;
             document.getElementById('btnDescargar').style.display = 'block';
             await cargarDatosDeNube();
-            limpiarFormulario();
+            limpiarForm();
         }
         btn.innerText = "🚀 SUBIR REGISTRO A LA NUBE";
         btn.disabled = false;
@@ -243,121 +241,83 @@
         document.getElementById('cTotal').innerText = filtrados.length;
 
         filtrados.forEach((i) => {
-            const rowText = `${i.id_carga} ${i.cliente} ${i.empresa} ${i.cedula}`.toLowerCase();
-            if(rowText.includes(filtro)) {
+            if(`${i.id_carga} ${i.cliente} ${i.empresa} ${i.cedula}`.toLowerCase().includes(filtro)) {
                 cuerpo.innerHTML += `<tr>
                     <td>
-                        <button class="action-btn" style="background:#3b82f6" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
-                        <button class="action-btn" style="background:#ef4444" onclick="eliminarRegistro(${i.id})">ELIMINAR</button>
+                        <button class="btn" style="padding:5px; background:#3b82f6; font-size:0.6rem" onclick='generarPDF(${JSON.stringify(i)})'>PDF</button>
+                        <button class="btn" style="padding:5px; background:#ef4444; font-size:0.6rem" onclick="eliminarRegistro(${i.id})">DEL</button>
                     </td>
                     <td><b>${i.id_carga}</b></td>
-                    <td>${i.fecha ? i.fecha.replace('T', ' ') : '-'}</td>
-                    <td>${i.cliente || '-'}</td>
-                    <td>${i.cedula || '-'}</td>
-                    <td>${i.empresa || '-'}</td>
-                    <td>${i.bultos || '-'}</td>
+                    <td>${i.fecha || ''}</td>
+                    <td style="color:var(--accent)">${i.num_precinto || '-'}</td>
+                    <td>${i.bultos || '0'}</td>
                     <td>${i.encargado || '-'}</td>
-                    <td>${i.almacenista || '-'}</td>
-                    <td><span class="badge-status ${i.estado === 'Excelente' ? 'bg-excelente' : 'bg-danado'}">${i.estado}</span></td>
-                    <td>${i.contenido || '-'}</td>
-                    <td style="color:#fca5a5">${i.no_declared || '-'}</td>
-                    <td>${i.observaciones || '-'}</td>
-                    <td>${i.foto ? `<img src="${i.foto}" class="img-table" onclick="window.open(this.src)">` : 'N/A'}</td>
+                    <td>${i.cliente || ''}</td>
+                    <td>${i.cedula || ''}</td>
+                    <td>${i.empresa || ''}</td>
+                    <td>${i.almacenista || ''}</td>
+                    <td>${i.estado}</td>
+                    <td>${i.contenido || ''}</td>
+                    <td style="color:var(--danger)">${i.no_declared || ''}</td>
+                    <td>${i.foto ? `<img src="${i.foto}" class="img-table">` : 'N/A'}</td>
                 </tr>`;
             }
         });
     }
 
-    // Funciones de Cámara
+    // Camara y Logo (Funciones iguales)
     function mostrarSeccionCamara() { document.getElementById('seccionCamara').classList.remove('hidden'); }
     async function initCamera() { 
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            const v = document.getElementById('video');
-            v.srcObject = stream; v.classList.remove('hidden'); 
-            document.getElementById('snap').classList.remove('hidden');
-        } catch (e) { alert("No se pudo acceder a la cámara"); }
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const v = document.getElementById('video'); v.srcObject = stream; v.classList.remove('hidden'); 
+        document.getElementById('snap').classList.remove('hidden');
     }
     function takePhoto() {
         const c = document.getElementById('canvas'); const v = document.getElementById('video');
         c.width = v.videoWidth; c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
-        const data = c.toDataURL('image/jpeg', 0.5);
-        document.getElementById('photoPreview').src = data;
+        document.getElementById('photoPreview').src = c.toDataURL('image/jpeg', 0.5);
         document.getElementById('photoPreview').classList.remove('hidden');
         if(stream) stream.getTracks().forEach(t => t.stop());
-        v.classList.add('hidden');
-        document.getElementById('snap').classList.add('hidden');
     }
 
     function loadLogo(e) {
         const reader = new FileReader();
-        reader.onload = (ev) => { 
-            appLogo = ev.target.result; 
-            localStorage.setItem('srca_logo', appLogo); 
-            document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; 
-        };
+        reader.onload = (ev) => { appLogo = ev.target.result; localStorage.setItem('srca_logo', appLogo); document.getElementById('logoDisplay').innerHTML = `<img src="${appLogo}">`; };
         reader.readAsDataURL(e.target.files[0]);
     }
 
-    async function eliminarRegistro(id) {
-        if(confirm("¿Estás seguro de eliminar este registro de la nube?")) {
-            await _supabase.from('registros_carga').delete().eq('id', id);
-            await cargarDatosDeNube();
-        }
-    }
-
-    function limpiarFormulario() {
-        ['idPrincipal', 'bultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => {
-            document.getElementById(id).value = '';
-        });
-        document.getElementById('photoPreview').src = '';
+    async function eliminarRegistro(id) { if(confirm("¿Eliminar?")) { await _supabase.from('registros_carga').delete().eq('id', id); cargarDatosDeNube(); } }
+    
+    function limpiarForm() {
+        ['idPrincipal', 'numPrecinto', 'cantBultos', 'encargado', 'cliente', 'cedulaCliente', 'empresaCliente', 'almacenista', 'contenido', 'noDeclarada', 'obs'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('photoPreview').classList.add('hidden');
-        document.getElementById('seccionCamara').classList.add('hidden');
-        document.getElementById('toggleCamBtn').classList.remove('hidden');
-    }
-
-    function exportarExcel() {
-        const datosExcel = db.map(i => ({
-            ID_CARGA: i.id_carga, TIPO: i.tipo, FECHA: i.fecha, CLIENTE: i.cliente, 
-            CEDULA: i.cedula, EMPRESA: i.empresa, BULTOS_PRECINTO: i.bultos,
-            INSPECTOR: i.encargado, ALMACENISTA: i.almacenista, ESTADO: i.estado,
-            CONTENIDO: i.contenido, NO_DECLARADO: i.no_declared, OBSERVACIONES: i.observaciones
-        }));
-        const ws = XLSX.utils.json_to_sheet(datosExcel);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-        XLSX.writeFile(wb, "REPORTE_CARGAS.xlsx");
     }
 
     function generarPDF(item) {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
         if(appLogo) doc.addImage(appLogo, 'PNG', 85, 10, 30, 30);
-        doc.setFontSize(16); doc.text("ACTA DE RECONOCIMIENTO FÍSICO", 105, 50, { align: "center" });
+        doc.setFontSize(14); doc.text("ACTA DE RECONOCIMIENTO", 105, 50, { align: "center" });
         doc.setFontSize(10);
         let y = 70;
-        const line = (label, val) => { doc.setFont(undefined, 'bold'); doc.text(label, 20, y); doc.setFont(undefined, 'normal'); doc.text(String(val || '-'), 70, y); y += 8; };
-        
-        line("ID DE CARGA:", item.id_carga);
-        line("MODALIDAD:", item.tipo);
-        line("FECHA:", item.fecha);
-        line("CLIENTE:", item.cliente);
-        line("CÉDULA/ID:", item.cedula);
-        line("EMPRESA:", item.empresa);
-        line("ESTADO:", item.estado);
-        line("CONTENIDO:", item.contenido);
-        
-        if(item.foto) {
-            doc.text("REGISTRO FOTOGRÁFICO:", 20, y + 5);
-            doc.addImage(item.foto, 'JPEG', 50, y + 10, 100, 70);
-        }
+        const print = (l, v) => { doc.text(`${l}: ${v || '-'}`, 20, y); y+=8; };
+        print("ID CARGA", item.id_carga);
+        print("PRECINTO", item.num_precinto);
+        print("BULTOS", item.bultos);
+        print("RESPONSABLES", item.encargado);
+        print("CLIENTE", item.cliente);
+        if(item.foto) doc.addImage(item.foto, 'JPEG', 50, y+10, 100, 70);
         doc.save(`ACTA_${item.id_carga}.pdf`);
     }
 
-    function descargarActaManual() {
-        if(currentPDFItem) generarPDF(currentPDFItem);
+    function exportarExcel() {
+        const ws = XLSX.utils.json_to_sheet(db);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Cargas");
+        XLSX.writeFile(wb, "REPORTE_SCCAM.xlsx");
     }
+
+    function descargarActaManual() { if(currentPDFItem) generarPDF(currentPDFItem); }
 </script>
 </body>
 </html>
-
